@@ -1,0 +1,25 @@
+## DB랑 Redis를 도커로 띄우는 파일
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: neuromove-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: emg_db
+      TZ: Asia/Seoul
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    container_name: neuromove-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql_data:
