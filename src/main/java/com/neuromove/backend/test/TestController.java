@@ -5,9 +5,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Map;
 
+@Profile({"local", "dev"})
 @Tag(name = "Test API", description = "테스트용 API입니다.")
 @RestController
 public class TestController {
