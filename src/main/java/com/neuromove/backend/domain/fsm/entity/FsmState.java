@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "fsm_states")
@@ -39,6 +40,9 @@ public class FsmState {
 
     @PrePersist
     protected void onCreate() {
+        if (this.fsmId == null) {
+            this.fsmId = UUID.randomUUID().toString();
+        }
         this.transitionedAt = LocalDateTime.now();
     }
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "calibration_profiles")
@@ -72,6 +73,9 @@ public class CalibrationProfile {
 
     @PrePersist
     protected void onCreate() {
+        if (this.profileId == null) {
+            this.profileId = UUID.randomUUID().toString();
+        }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }

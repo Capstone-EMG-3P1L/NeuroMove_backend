@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "devices")
@@ -33,6 +34,9 @@ public class Device {
 
     @PrePersist
     protected void onCreate() {
+        if (this.deviceId == null) {
+            this.deviceId = UUID.randomUUID().toString();
+        }
         this.createdAt = LocalDateTime.now();
     }
 }
