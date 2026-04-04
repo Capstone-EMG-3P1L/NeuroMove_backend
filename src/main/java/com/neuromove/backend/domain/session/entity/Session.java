@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "sessions")
@@ -49,6 +50,9 @@ public class Session {
 
     @PrePersist
     protected void onCreate() {
+        if (this.sessionId == null) {
+            this.sessionId = UUID.randomUUID().toString();
+        }
         this.startedAt = LocalDateTime.now();
         this.status = SessionStatus.ACTIVE;
     }

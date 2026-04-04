@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "commands")
@@ -49,6 +50,9 @@ public class Command {
 
     @PrePersist
     protected void onCreate() {
+        if (this.commandId == null) {
+            this.commandId = UUID.randomUUID().toString();
+        }
         this.issuedAt = LocalDateTime.now();
         this.isFetched = false;
     }

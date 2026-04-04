@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "intent_logs")
@@ -59,6 +60,9 @@ public class IntentLog {
 
     @PrePersist
     protected void onCreate() {
+        if (this.intentId == null) {
+            this.intentId = UUID.randomUUID().toString();
+        }
         this.receivedAt = LocalDateTime.now();
     }
 }
