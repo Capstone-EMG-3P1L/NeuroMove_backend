@@ -1,35 +1,36 @@
 package com.neuromove.backend.global.api;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"success", "code", "message", "data"})
 public class ApiResponse<T> {
 
     private final boolean success;
+    private final String code;
     private final String message;
     private final T data;
 
-    private ApiResponse(boolean success, String message, T data) {
+    private ApiResponse(boolean success, String code, String message, T data) {
         this.success = success;
+        this.code = code;
         this.message = message;
         this.data = data;
     }
 
-    public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data);
+    public static <T> ApiResponse<T> success(String code, String message, T data) {
+        return new ApiResponse<>(true, code, message, data);
     }
 
-    public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, "요청이 성공했습니다.", data);
-    }
-
-    public static ApiResponse<Void> successMessage(String message) {
-        return new ApiResponse<>(true, message, null);
-    }
-
-    public static ApiResponse<Void> error(String message) {
-        return new ApiResponse<>(false, message, null);
+    public static ApiResponse<Void> error(String code, String message) {
+        return new ApiResponse<>(false, code, message, null);
     }
 
     public boolean isSuccess() {
         return success;
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public String getMessage() {
