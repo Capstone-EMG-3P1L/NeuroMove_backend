@@ -1,6 +1,8 @@
 package com.neuromove.backend.domain.session.entity;
 
 import com.neuromove.backend.domain.calibration.entity.CalibrationProfile;
+import com.neuromove.backend.domain.device.entity.EmgDevice;
+import com.neuromove.backend.domain.device.entity.MotorDevice;
 import com.neuromove.backend.domain.session.entity.enums.SessionStatus;
 import com.neuromove.backend.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -29,8 +31,13 @@ public class Session {
     @JoinColumn(name = "profile_id")
     private CalibrationProfile calibrationProfile;
 
-    @Column(name = "device_id", length = 50)
-    private String deviceId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "emg_device_id")
+    private EmgDevice emgDevice;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "motor_device_id")
+    private MotorDevice motorDevice;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "ENUM('ACTIVE','ENDED')", nullable = false)

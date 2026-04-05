@@ -8,16 +8,16 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "devices")
+@Table(name = "emg_devices")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Device {
+public class EmgDevice {
 
     @Id
-    @Column(name = "device_id", length = 50)
-    private String deviceId;
+    @Column(name = "emg_device_id", length = 50)
+    private String emgDeviceId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -32,11 +32,19 @@ public class Device {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
-        if (this.deviceId == null) {
-            this.deviceId = UUID.randomUUID().toString();
+        if (this.emgDeviceId == null) {
+            this.emgDeviceId = UUID.randomUUID().toString();
         }
         this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }
