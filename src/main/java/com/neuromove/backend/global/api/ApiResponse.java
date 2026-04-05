@@ -2,6 +2,8 @@ package com.neuromove.backend.global.api;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.Objects;
+
 @JsonPropertyOrder({"success", "code", "message", "data"})
 public class ApiResponse<T> {
 
@@ -12,8 +14,8 @@ public class ApiResponse<T> {
 
     private ApiResponse(boolean success, String code, String message, T data) {
         this.success = success;
-        this.code = code;
-        this.message = message;
+        this.code = Objects.requireNonNull(code, "code must not be null");
+        this.message = Objects.requireNonNull(message, "message must not be null");
         this.data = data;
     }
 
