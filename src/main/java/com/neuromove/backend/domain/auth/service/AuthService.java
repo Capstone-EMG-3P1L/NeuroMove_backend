@@ -41,7 +41,10 @@ public class AuthService {
             User savedUser = userRepository.save(user);
             return RegisterResponse.from(savedUser);
         } catch (DataIntegrityViolationException e) {
-            throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
+            if (isUsernameDuplicateException(e)) {
+                throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
+            }
+            throw e;
         }
     }
 
@@ -60,5 +63,18 @@ public class AuthService {
                 .tokenType("Bearer")
                 .user(LoginUserResponse.from(user))
                 .build();
+    }
+
+    private boolean isUsernameDuplicateException(DataIntegrityViolationException e) {
+        Throwable cause = e;
+
+        while (cause != null) {
+            if (cause.getMessage() != null && cause.getMessage().toLowerCase().contains("username")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+
+        return false;
     }
 }
