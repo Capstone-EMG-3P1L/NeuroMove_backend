@@ -11,6 +11,7 @@ import com.neuromove.backend.domain.user.repository.UserRepository;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,17 +37,20 @@ public class AuthService {
                 .name(request.getName())
                 .build();
 
-        User savedUser = userRepository.save(user);
-
-        return RegisterResponse.from(savedUser);
+        try {
+            User savedUser = userRepository.save(user);
+            return RegisterResponse.from(savedUser);
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
+        }
     }
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.AUTHENTICATION_FAILED));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+            throw new CustomException(ErrorCode.AUTHENTICATION_FAILED);
         }
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getUsername());
