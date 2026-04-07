@@ -8,11 +8,13 @@ import com.neuromove.backend.domain.device.service.EmgDeviceService;
 import com.neuromove.backend.domain.user.entity.User;
 import com.neuromove.backend.domain.user.repository.UserRepository;
 import com.neuromove.backend.global.api.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/emg-devices")
 @RequiredArgsConstructor
