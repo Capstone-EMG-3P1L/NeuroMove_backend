@@ -61,9 +61,7 @@ public class CalibrationService {
         CalibrationSession session = calibrationSessionRepository.findById(request.getCalibrationSessionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CALIBRATION_SESSION_NOT_FOUND));
 
-        if (!session.getUser().getUserId().equals(user.getUserId())) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
+        validateOwner(user, session);
 
         if (session.getStatus() == CalibrationStatus.COMPLETED) {
             throw new CustomException(ErrorCode.CALIBRATION_ALREADY_COMPLETED);
@@ -84,6 +82,8 @@ public class CalibrationService {
     public CalibrationEndResponse end(User user, CalibrationEndRequest request) {
         CalibrationSession session = calibrationSessionRepository.findById(request.getCalibrationSessionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CALIBRATION_SESSION_NOT_FOUND));
+
+        validateOwner(user, session);
 
         if (session.getStatus() == CalibrationStatus.COMPLETED) {
             throw new CustomException(ErrorCode.CALIBRATION_ALREADY_COMPLETED);
@@ -110,6 +110,12 @@ public class CalibrationService {
 
         CalibrationProfile saved = calibrationProfileRepository.save(profile);
         return CalibrationEndResponse.from(saved);
+    }
+
+    private void validateOwner(User user, CalibrationSession session) {
+        if (!session.getUser().getUserId().equals(user.getUserId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
     }
 
     public CalibrationProfileResponse getProfile(User user) {
