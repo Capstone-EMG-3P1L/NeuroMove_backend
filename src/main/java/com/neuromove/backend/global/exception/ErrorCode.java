@@ -23,6 +23,7 @@ public enum ErrorCode {
     MOTOR_DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "MOTOR_DEVICE_NOT_FOUND", "모터 디바이스를 찾을 수 없습니다."),
 
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "세션을 찾을 수 없습니다."),
+    DUPLICATE_SEQUENCE(HttpStatus.BAD_REQUEST, "DUPLICATE_SEQUENCE", "중복되거나 오래된 sequenceNumber입니다."),
     INVALID_INTERNAL_KEY(HttpStatus.UNAUTHORIZED, "INVALID_INTERNAL_KEY", "유효하지 않은 Internal Key입니다.");
 
     private final HttpStatus status;
