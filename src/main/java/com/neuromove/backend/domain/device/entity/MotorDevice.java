@@ -1,6 +1,7 @@
 package com.neuromove.backend.domain.device.entity;
 
 import com.neuromove.backend.domain.device.entity.enums.ConnectionStatus;
+import com.neuromove.backend.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,11 @@ public class MotorDevice {
     @Column(name = "motor_device_id", length = 50)
     private String motorDeviceId;
 
-    @Column(name = "name", length = 50)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "name", length = 50, nullable = false)
     private String name;
 
     @Column(name = "is_active", nullable = false)
