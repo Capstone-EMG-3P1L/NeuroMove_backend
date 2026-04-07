@@ -31,12 +31,21 @@ public class SessionService {
     public SessionStartResponse start(User user, SessionStartRequest request) {
         CalibrationProfile profile = calibrationProfileRepository.findById(request.getProfileId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CALIBRATION_PROFILE_NOT_FOUND));
+        if (!profile.getUser().getUserId().equals(user.getUserId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
 
         EmgDevice emgDevice = emgDeviceRepository.findById(request.getEmgDeviceId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EMG_DEVICE_NOT_FOUND));
+        if (!emgDevice.getUser().getUserId().equals(user.getUserId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
 
         MotorDevice motorDevice = motorDeviceRepository.findById(request.getMotorDeviceId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MOTOR_DEVICE_NOT_FOUND));
+        if (!motorDevice.getUser().getUserId().equals(user.getUserId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
 
         Session session = Session.builder()
                 .user(user)
