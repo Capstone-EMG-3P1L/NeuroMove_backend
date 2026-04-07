@@ -23,10 +23,6 @@ public class MotorDeviceService {
 
     @Transactional
     public MotorDeviceRegisterResponse register(User user, MotorDeviceRegisterRequest request) {
-        if (motorDeviceRepository.existsByMotorDeviceId(request.getMotorDeviceId())) {
-            throw new IllegalArgumentException("이미 등록된 모터 디바이스입니다.");
-        }
-
         MotorDevice motorDevice = MotorDevice.builder()
                 .motorDeviceId(request.getMotorDeviceId())
                 .user(user)

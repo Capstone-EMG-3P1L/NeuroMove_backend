@@ -22,10 +22,6 @@ public class EmgDeviceService {
 
     @Transactional
     public EmgDeviceRegisterResponse register(User user, EmgDeviceRegisterRequest request) {
-        if (emgDeviceRepository.existsByEmgDeviceId(request.getEmgDeviceId())) {
-            throw new IllegalArgumentException("이미 등록된 EMG 디바이스입니다.");
-        }
-
         EmgDevice emgDevice = EmgDevice.builder()
                 .emgDeviceId(request.getEmgDeviceId())
                 .user(user)
