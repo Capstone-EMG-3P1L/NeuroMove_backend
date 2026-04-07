@@ -41,9 +41,11 @@ public class CalibrationController {
     @Operation(summary = "Calibration 단계 변경", description = "각 단계 완료 후 다음 단계로 진행합니다.")
     @PatchMapping
     public ApiResponse<CalibrationStepUpdateResponse> updateStep(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @Valid @RequestBody CalibrationStepUpdateRequest request
     ) {
-        CalibrationStepUpdateResponse response = calibrationService.updateStep(request);
+        User user = getUser(principal);
+        CalibrationStepUpdateResponse response = calibrationService.updateStep(user, request);
         return ApiResponse.success("CALIBRATION_STEP_UPDATED", "Calibration 단계가 변경되었습니다.", response);
     }
 
