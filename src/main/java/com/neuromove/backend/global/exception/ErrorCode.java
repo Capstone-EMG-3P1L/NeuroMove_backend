@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력값이 올바르지 않습니다."),
 
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
+    USER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "존재하지 않는 사용자입니다."),
 
     EMG_DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "EMG_DEVICE_NOT_FOUND", "EMG 디바이스를 찾을 수 없습니다."),
     CALIBRATION_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "CALIBRATION_SESSION_NOT_FOUND", "Calibration 세션을 찾을 수 없습니다."),
