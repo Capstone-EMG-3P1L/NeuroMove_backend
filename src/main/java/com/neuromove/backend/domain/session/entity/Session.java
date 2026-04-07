@@ -55,6 +55,12 @@ public class Session {
     @Column(name = "duration_seconds")
     private Integer durationSeconds;
 
+    public void updateMaxRiskScore(float riskScore) {
+        if (this.maxRiskScore == null || riskScore > this.maxRiskScore) {
+            this.maxRiskScore = riskScore;
+        }
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.sessionId == null) {
