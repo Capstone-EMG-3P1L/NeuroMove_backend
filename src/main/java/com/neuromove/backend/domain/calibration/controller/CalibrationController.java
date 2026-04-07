@@ -9,6 +9,8 @@ import com.neuromove.backend.domain.calibration.service.CalibrationService;
 import com.neuromove.backend.domain.user.entity.User;
 import com.neuromove.backend.domain.user.repository.UserRepository;
 import com.neuromove.backend.global.api.ApiResponse;
+import com.neuromove.backend.global.exception.CustomException;
+import com.neuromove.backend.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -72,6 +74,6 @@ public class CalibrationController {
 
     private User getUser(CustomUserPrincipal principal) {
         return userRepository.findByUsername(principal.username())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }
