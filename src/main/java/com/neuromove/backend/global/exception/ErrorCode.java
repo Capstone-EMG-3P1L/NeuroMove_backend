@@ -18,7 +18,9 @@ public enum ErrorCode {
     EMG_DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "EMG_DEVICE_NOT_FOUND", "EMG 디바이스를 찾을 수 없습니다."),
     CALIBRATION_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "CALIBRATION_SESSION_NOT_FOUND", "Calibration 세션을 찾을 수 없습니다."),
     CALIBRATION_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "CALIBRATION_ALREADY_COMPLETED", "이미 완료된 Calibration 세션입니다."),
-    CALIBRATION_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "CALIBRATION_PROFILE_NOT_FOUND", "Calibration 프로파일을 찾을 수 없습니다.");
+    CALIBRATION_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "CALIBRATION_PROFILE_NOT_FOUND", "Calibration 프로파일을 찾을 수 없습니다."),
+
+    MOTOR_DEVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "MOTOR_DEVICE_NOT_FOUND", "모터 디바이스를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
