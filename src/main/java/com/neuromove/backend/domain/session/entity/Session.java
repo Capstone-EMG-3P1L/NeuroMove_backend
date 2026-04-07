@@ -46,6 +46,9 @@ public class Session {
     @Column(name = "max_risk_score")
     private Float maxRiskScore;
 
+    @Column(name = "last_sequence_number")
+    private Long lastSequenceNumber;
+
     @Column(name = "started_at", nullable = false, updatable = false)
     private LocalDateTime startedAt;
 
@@ -54,6 +57,10 @@ public class Session {
 
     @Column(name = "duration_seconds")
     private Integer durationSeconds;
+
+    public void updateLastSequenceNumber(Long sequenceNumber) {
+        this.lastSequenceNumber = sequenceNumber;
+    }
 
     public void updateMaxRiskScore(float riskScore) {
         if (this.maxRiskScore == null || riskScore > this.maxRiskScore) {

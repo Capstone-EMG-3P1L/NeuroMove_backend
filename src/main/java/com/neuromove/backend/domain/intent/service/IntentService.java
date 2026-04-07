@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -28,6 +29,8 @@ public class IntentService {
     private static final float MAX_DRIVING_MINUTES = 30.0f;
     private static final float EMERGENCY_STOP_THRESHOLD = 0.7f;
     private static final float FATIGUE_THRESHOLD = 0.5f;
+    private static final float CONFIDENCE_THRESHOLD = 0.7f;
+    private static final long STALE_COMMAND_MS = 3000L;
 
     private final SessionRepository sessionRepository;
     private final IntentLogRepository intentLogRepository;
@@ -38,6 +41,20 @@ public class IntentService {
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
         Session session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.SESSION_NOT_FOUND));
+
+        // [Fail-safe 1] sequenceNumber 중복/지연 방지
+        if (session.getLastSequenceNumber() != null
+                && request.getSequenceNumber() <= session.getLastSequenceNumber()) {
+            throw new CustomException(ErrorCode.DUPLICATE_SEQUENCE);
+        }
+        session.updateLastSequenceNumber(request.getSequenceNumber());
+
+        // [Fail-safe 2] 명령 유효시간 처리 (3초 초과 시 BLOCKED)
+        long now = Instant.now().toEpochMilli();
+        boolean stale = (now - request.getTimestamp()) > STALE_COMMAND_MS;
+
+        // [Fail-safe 3] confidence < 0.7 → BLOCKED
+        boolean lowConfidence = request.getConfidence() < CONFIDENCE_THRESHOLD;
 
         // 1. durationRatio 계산
         long elapsedMinutes = Duration.between(session.getStartedAt(), LocalDateTime.now()).toMinutes();
@@ -59,7 +76,7 @@ public class IntentService {
         }
 
         // 4. speedLevel 및 최종 command 결정
-        boolean accepted = riskScore < EMERGENCY_STOP_THRESHOLD;
+        boolean accepted = riskScore < EMERGENCY_STOP_THRESHOLD && !stale && !lowConfidence;
         int speedLevel = calculateSpeedLevel(riskScore);
         CommandType finalCommand = accepted
                 ? CommandType.valueOf(request.getIntent().name())
