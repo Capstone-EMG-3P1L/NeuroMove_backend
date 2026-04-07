@@ -15,3 +15,7 @@ springdoc:
 
 jwt:
   secret: ${JWT_SECRET}
+
+ai:
+  server:
+    url: ${AI_SERVER_URL}

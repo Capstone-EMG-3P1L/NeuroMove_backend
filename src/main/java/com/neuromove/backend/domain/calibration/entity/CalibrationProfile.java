@@ -71,6 +71,10 @@ public class CalibrationProfile {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public void deactivate() {
+        this.isActive = false;
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.profileId == null) {
