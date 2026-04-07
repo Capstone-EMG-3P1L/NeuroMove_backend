@@ -23,7 +23,7 @@ public class EmgDevice {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "name", length = 50)
+    @Column(name = "name", length = 50, nullable = false)
     private String name;
 
     @Column(name = "is_active", nullable = false)
