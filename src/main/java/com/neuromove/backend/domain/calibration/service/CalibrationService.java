@@ -57,9 +57,13 @@ public class CalibrationService {
     }
 
     @Transactional
-    public CalibrationStepUpdateResponse updateStep(CalibrationStepUpdateRequest request) {
+    public CalibrationStepUpdateResponse updateStep(User user, CalibrationStepUpdateRequest request) {
         CalibrationSession session = calibrationSessionRepository.findById(request.getCalibrationSessionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CALIBRATION_SESSION_NOT_FOUND));
+
+        if (!session.getUser().getUserId().equals(user.getUserId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
 
         if (session.getStatus() == CalibrationStatus.COMPLETED) {
             throw new CustomException(ErrorCode.CALIBRATION_ALREADY_COMPLETED);
