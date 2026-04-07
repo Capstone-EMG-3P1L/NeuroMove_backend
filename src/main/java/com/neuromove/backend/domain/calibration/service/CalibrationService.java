@@ -102,6 +102,9 @@ public class CalibrationService {
 
         session.complete(null);
 
+        calibrationProfileRepository.findByUserAndIsActiveTrue(user)
+                .ifPresent(CalibrationProfile::deactivate);
+
         CalibrationProfile profile = CalibrationProfile.builder()
                 .user(user)
                 .calibrationSessionId(session.getCalibrationSessionId())
