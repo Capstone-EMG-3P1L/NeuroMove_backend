@@ -6,22 +6,31 @@ import com.neuromove.backend.global.api.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
+import lombok.RequiredArgsConstructor;
+import com.neuromove.backend.domain.user.entity.User;
+import com.neuromove.backend.domain.user.repository.UserRepository;
+import com.neuromove.backend.global.exception.CustomException;
+import com.neuromove.backend.global.exception.ErrorCode;
 import java.util.List;
 
 @SecurityRequirement(name = "BearerAuth")
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    private final UserRepository userRepository;
 
     @GetMapping("/me")
     public ApiResponse<UserStatusResponse> getMyInfo(
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
+        User user = userRepository.findByUsername(principal.username())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         UserStatusResponse response = new UserStatusResponse(
-                "user-001",
-                principal.username(),
-                "박수빈",
+                user.getUserId(),
+                user.getUsername(),
+                user.getName(),
                 new RegisteredEmgDeviceResponse(
                         "emg-esp32-A12F",
                         "내 EMG 보드",
@@ -48,6 +57,9 @@ public class UserController {
     public ApiResponse<SessionLogsResponse> getMyLogs(
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
+        User user = userRepository.findByUsername(principal.username())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         SessionLogsResponse response = new SessionLogsResponse(
                 List.of(
                         new SessionLogItemResponse(
