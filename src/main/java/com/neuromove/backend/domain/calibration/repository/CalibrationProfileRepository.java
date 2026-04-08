@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface CalibrationProfileRepository extends JpaRepository<CalibrationProfile, String> {
 
-    Optional<CalibrationProfile> findByUserAndIsActiveTrue(User user);
+    Optional<CalibrationProfile> findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(User user);
 }

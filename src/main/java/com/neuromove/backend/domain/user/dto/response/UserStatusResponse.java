@@ -1,7 +1,5 @@
 package com.neuromove.backend.domain.user.dto.response;
 
-import com.neuromove.backend.domain.session.dto.response.SessionSummaryResponse;
-
 public record UserStatusResponse(
         String userId,
         String username,
@@ -9,6 +7,6 @@ public record UserStatusResponse(
         RegisteredEmgDeviceResponse registeredEmgDevice,
         RegisteredMotorDeviceResponse registeredMotorDevice,
         ActiveCalibrationProfileResponse activeCalibrationProfile,
-        SessionSummaryResponse activeSession
+        ActiveSessionResponse activeSession
 ) {
 }
