@@ -6,6 +6,7 @@ import com.neuromove.backend.domain.auth.dto.response.LoginResponse;
 import com.neuromove.backend.domain.auth.dto.response.RegisterResponse;
 import com.neuromove.backend.domain.auth.service.AuthService;
 import com.neuromove.backend.global.api.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -27,5 +28,11 @@ public class AuthController {
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ApiResponse.success("LOGIN_SUCCESS", "로그인에 성공했습니다.", response);
+    }
+
+    @SecurityRequirement(name = "BearerAuth")
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout() {
+        return ApiResponse.success("LOGOUT_SUCCESS", "로그아웃이 완료되었습니다.", null);
     }
 }
