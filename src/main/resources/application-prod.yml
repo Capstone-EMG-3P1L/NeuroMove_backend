@@ -1,0 +1,36 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/${DB_NAME:emg_db}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME:capstone}
+    password: ${DB_PASSWORD:1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 100
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+security:
+  api-key: ${SECURITY_API_KEY:CHANGE_ME_IN_PRODUCTION}
+
+jwt:
+  secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
+ai:
+  server:
+    url: ${AI_SERVER_URL:http://ai-server:5000}
