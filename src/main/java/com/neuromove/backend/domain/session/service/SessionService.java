@@ -11,7 +11,9 @@ import com.neuromove.backend.domain.device.repository.MotorDeviceRepository;
 import com.neuromove.backend.domain.fsm.entity.FsmState;
 import com.neuromove.backend.domain.fsm.repository.FsmStateRepository;
 import com.neuromove.backend.domain.session.dto.request.SessionStartRequest;
+import com.neuromove.backend.domain.session.dto.request.SessionEndRequest;
 import com.neuromove.backend.domain.session.dto.response.SessionStartResponse;
+import com.neuromove.backend.domain.session.dto.response.SessionEndResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionStatusResponse;
 import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
@@ -79,5 +81,22 @@ public class SessionService {
                 .orElse(null);
 
         return SessionStatusResponse.of(session, latestFsmState, latestCommand);
+    }
+
+    @Transactional
+    public SessionEndResponse end(String sessionId, String userId, SessionEndRequest request) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        if (session.getStatus() == com.neuromove.backend.domain.session.entity.enums.SessionStatus.ENDED) {
+            return SessionEndResponse.from(session);
+        }
+
+        session.end();
+        return SessionEndResponse.from(session);
     }
 }
