@@ -12,17 +12,15 @@ import com.neuromove.backend.domain.fsm.entity.FsmState;
 import com.neuromove.backend.domain.fsm.repository.FsmStateRepository;
 import com.neuromove.backend.domain.intent.entity.IntentLog;
 import com.neuromove.backend.domain.intent.repository.IntentLogRepository;
+import com.neuromove.backend.domain.session.dto.request.SessionEndRequest;
 import com.neuromove.backend.domain.session.dto.request.SessionStartRequest;
 import com.neuromove.backend.domain.session.dto.response.FsmStateLogResponse;
 import com.neuromove.backend.domain.session.dto.response.IntentLogResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionDetailResponse;
-import com.neuromove.backend.domain.session.dto.response.SessionStartResponse;
-import com.neuromove.backend.domain.session.dto.response.SessionSummaryResponse;
-import com.neuromove.backend.domain.session.dto.request.SessionStartRequest;
-import com.neuromove.backend.domain.session.dto.request.SessionEndRequest;
-import com.neuromove.backend.domain.session.dto.response.SessionStartResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionEndResponse;
+import com.neuromove.backend.domain.session.dto.response.SessionStartResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionStatusResponse;
+import com.neuromove.backend.domain.session.dto.response.SessionSummaryResponse;
 import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
 import com.neuromove.backend.domain.user.entity.User;
@@ -144,7 +142,7 @@ public class SessionService {
         }
         return time.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
-}
+
     public SessionStatusResponse getSessionStatus(String sessionId, String userId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SESSION_NOT_FOUND));
