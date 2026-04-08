@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import com.neuromove.backend.domain.session.dto.response.FsmStateLogResponse;
 import com.neuromove.backend.domain.session.dto.response.IntentLogResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionDetailResponse;
+import com.neuromove.backend.domain.session.dto.response.SessionStatusResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionSummaryResponse;
 import java.util.List;
 import java.time.LocalDateTime;
@@ -44,6 +45,16 @@ public class SessionController {
 
         SessionStartResponse response = sessionService.start(user, request);
         return ApiResponse.success("SESSION_CREATED", "주행 세션이 시작되었습니다.", response);
+    }
+
+    @Operation(summary = "세션 상태 조회", description = "웹소켓 연결 전 초기 상태 확인 및 연결 끊김 후 상태 복구 용도로 현재 주행 세션 상태를 1회 조회합니다.")
+    @GetMapping("/{sessionId}/status")
+    public ApiResponse<SessionStatusResponse> getSessionStatus(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable String sessionId
+    ) {
+        SessionStatusResponse response = sessionService.getSessionStatus(sessionId, principal.userId());
+        return ApiResponse.success("SESSION_STATUS_FETCHED", "세션 상태를 조회했습니다.", response);
     }
 
     @GetMapping("/{sessionId}/detail")
