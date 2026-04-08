@@ -1,5 +1,4 @@
-## DB랑 Redis를 도커로 띄우는 파일
-
+version: '3.8'
 services:
   mysql:
     image: mysql:8.0
@@ -7,19 +6,45 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME:-emg_db}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       TZ: Asia/Seoul
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-
+    networks:
+      - backend-network
   redis:
     image: redis:7
     container_name: neuromove-redis
     restart: always
     ports:
       - "6379:6379"
-
+    networks:
+      - backend-network
+  backend:
+    build: .
+    container_name: neuromove-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRATION: 3600000
+      SECURITY_API_KEY: neuromove-super-secret-key-2026
+      AI_SERVER_URL: http://localhost:5000
+    networks:
+      - backend-network
 volumes:
   mysql_data:
+networks:
+  backend-network:
+    driver: bridge
