@@ -2,12 +2,19 @@ package com.neuromove.backend.domain.session.service;
 
 import com.neuromove.backend.domain.calibration.entity.CalibrationProfile;
 import com.neuromove.backend.domain.calibration.repository.CalibrationProfileRepository;
+import com.neuromove.backend.domain.command.entity.Command;
+import com.neuromove.backend.domain.command.repository.CommandRepository;
 import com.neuromove.backend.domain.device.entity.EmgDevice;
 import com.neuromove.backend.domain.device.entity.MotorDevice;
 import com.neuromove.backend.domain.device.repository.EmgDeviceRepository;
 import com.neuromove.backend.domain.device.repository.MotorDeviceRepository;
+import com.neuromove.backend.domain.fsm.entity.FsmState;
+import com.neuromove.backend.domain.fsm.repository.FsmStateRepository;
 import com.neuromove.backend.domain.session.dto.request.SessionStartRequest;
+import com.neuromove.backend.domain.session.dto.request.SessionEndRequest;
 import com.neuromove.backend.domain.session.dto.response.SessionStartResponse;
+import com.neuromove.backend.domain.session.dto.response.SessionEndResponse;
+import com.neuromove.backend.domain.session.dto.response.SessionStatusResponse;
 import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
 import com.neuromove.backend.domain.user.entity.User;
@@ -26,6 +33,8 @@ public class SessionService {
     private final CalibrationProfileRepository calibrationProfileRepository;
     private final EmgDeviceRepository emgDeviceRepository;
     private final MotorDeviceRepository motorDeviceRepository;
+    private final FsmStateRepository fsmStateRepository;
+    private final CommandRepository commandRepository;
 
     @Transactional
     public SessionStartResponse start(User user, SessionStartRequest request) {
@@ -56,5 +65,38 @@ public class SessionService {
 
         Session saved = sessionRepository.save(session);
         return SessionStartResponse.from(saved);
+    }
+
+    public SessionStatusResponse getSessionStatus(String sessionId, String userId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        FsmState latestFsmState = fsmStateRepository.findTopBySessionOrderByTransitionedAtDesc(session)
+                .orElse(null);
+        Command latestCommand = commandRepository.findTopBySessionOrderByIssuedAtDesc(session)
+                .orElse(null);
+
+        return SessionStatusResponse.of(session, latestFsmState, latestCommand);
+    }
+
+    @Transactional
+    public SessionEndResponse end(String sessionId, String userId, SessionEndRequest request) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SESSION_NOT_FOUND));
+
+        if (!session.getUser().getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        if (session.getStatus() == com.neuromove.backend.domain.session.entity.enums.SessionStatus.ENDED) {
+            return SessionEndResponse.from(session);
+        }
+
+        session.end();
+        return SessionEndResponse.from(session);
     }
 }
