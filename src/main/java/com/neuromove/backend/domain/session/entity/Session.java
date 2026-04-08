@@ -68,6 +68,14 @@ public class Session {
         }
     }
 
+    public void end() {
+        this.status = SessionStatus.ENDED;
+        this.endedAt = LocalDateTime.now();
+        if (this.startedAt != null) {
+            this.durationSeconds = (int) java.time.Duration.between(this.startedAt, this.endedAt).getSeconds();
+        }
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.sessionId == null) {
