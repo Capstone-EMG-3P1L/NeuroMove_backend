@@ -102,7 +102,7 @@ public class CalibrationService {
 
         session.complete(null);
 
-        calibrationProfileRepository.findByUserAndIsActiveTrue(user)
+        calibrationProfileRepository.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .ifPresent(CalibrationProfile::deactivate);
 
         CalibrationProfile profile = CalibrationProfile.builder()
@@ -122,7 +122,7 @@ public class CalibrationService {
     }
 
     public CalibrationProfileResponse getProfile(User user) {
-        CalibrationProfile profile = calibrationProfileRepository.findByUserAndIsActiveTrue(user)
+        CalibrationProfile profile = calibrationProfileRepository.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .orElseThrow(() -> new CustomException(ErrorCode.CALIBRATION_PROFILE_NOT_FOUND));
 
         return CalibrationProfileResponse.from(profile);

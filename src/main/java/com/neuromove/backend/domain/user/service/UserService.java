@@ -42,13 +42,13 @@ public class UserService {
     public UserStatusResponse getMyInfo(String username) {
         User user = getUserByUsername(username);
 
-        EmgDevice emgDevice = emgDeviceRepository.findFirstByUserAndIsActiveTrue(user)
+        EmgDevice emgDevice = emgDeviceRepository.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .orElse(null);
 
-        MotorDevice motorDevice = motorDeviceRepository.findFirstByUserAndIsActiveTrue(user)
+        MotorDevice motorDevice = motorDeviceRepository.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .orElse(null);
 
-        CalibrationProfile calibrationProfile = calibrationProfileRepository.findFirstByUserAndIsActiveTrue(user)
+        CalibrationProfile calibrationProfile = calibrationProfileRepository.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .orElse(null);
 
         Session activeSession = sessionRepository.findFirstByUserAndStatus(user, SessionStatus.ACTIVE)

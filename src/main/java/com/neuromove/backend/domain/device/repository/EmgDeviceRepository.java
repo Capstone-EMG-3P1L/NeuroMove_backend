@@ -13,5 +13,5 @@ public interface EmgDeviceRepository extends JpaRepository<EmgDevice, String> {
 
     List<EmgDevice> findAllByUserOrderByCreatedAtDesc(User user);
 
-    Optional<EmgDevice> findFirstByUserAndIsActiveTrue(User user);
+    Optional<EmgDevice> findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(User user);
 }
