@@ -21,6 +21,7 @@ import com.neuromove.backend.domain.session.dto.response.IntentLogResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionDetailResponse;
 import com.neuromove.backend.domain.session.dto.response.SessionSummaryResponse;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Tag(name = "Session", description = "주행 세션 관리")
 @SecurityRequirement(name = "BearerAuth")
@@ -55,8 +56,8 @@ public class SessionController {
                         "emg-esp32-A12F",
                         "motor-esp32-C01",
                         "ENDED",
-                        "2026-04-04T14:40:00",
-                        "2026-04-04T14:48:20",
+                        LocalDateTime.parse("2026-04-04T14:40:00"),
+                        LocalDateTime.parse("2026-04-04T14:48:20"),
                         500,
                         0.78
                 ),

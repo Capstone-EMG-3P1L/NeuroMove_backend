@@ -30,9 +30,9 @@ public class AuthController {
         return ApiResponse.success("LOGIN_SUCCESS", "로그인에 성공했습니다.", response);
     }
 
-    @SecurityRequirement(name = "BearerAuth")
-    @PostMapping("/logout")
-    public ApiResponse<Void> logout() {
-        return ApiResponse.success("LOGOUT_SUCCESS", "로그아웃이 완료되었습니다.", null);
-    }
+//    @SecurityRequirement(name = "BearerAuth")
+//    @PostMapping("/logout")
+//    public ApiResponse<Void> logout() {
+//        return ApiResponse.success("LOGOUT_SUCCESS", "로그아웃이 완료되었습니다.", null);
+//    }
 }
