@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.neuromove.backend.domain.session.dto.response.SessionDetailResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,50 +68,12 @@ public class SessionController {
 
     @GetMapping("/{sessionId}/detail")
     public ApiResponse<SessionDetailResponse> getSessionDetail(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable String sessionId
     ) {
-        SessionDetailResponse response = new SessionDetailResponse(
-                new SessionSummaryResponse(
-                        sessionId,
-                        "emg-esp32-A12F",
-                        "motor-esp32-C01",
-                        "ENDED",
-                        LocalDateTime.parse("2026-04-04T14:40:00"),
-                        LocalDateTime.parse("2026-04-04T14:48:20"),
-                        500,
-                        0.78
-                ),
-                List.of(
-                        new FsmStateLogResponse(
-                                "READY",
-                                "DRIVING",
-                                "SESSION_STARTED",
-                                "2026-04-04T14:40:02"
-                        ),
-                        new FsmStateLogResponse(
-                                "DRIVING",
-                                "FATIGUE_COMPENSATING",
-                                "FATIGUE",
-                                "2026-04-04T14:45:10"
-                        )
-                ),
-                List.of(
-                        new IntentLogResponse(
-                                "FORWARD",
-                                0.21,
-                                "2026-04-04T14:41:10"
-                        ),
-                        new IntentLogResponse(
-                                "LEFT",
-                                0.42,
-                                "2026-04-04T14:43:20"
-                        ),
-                        new IntentLogResponse(
-                                "STOP",
-                                0.78,
-                                "2026-04-04T14:47:55"
-                        )
-                )
+        SessionDetailResponse response = sessionService.getSessionDetail(
+                principal.username(),
+                sessionId
         );
 
         return ApiResponse.success("SESSION_DETAIL_FETCHED", "운행 로그 상세를 조회했습니다.", response);
