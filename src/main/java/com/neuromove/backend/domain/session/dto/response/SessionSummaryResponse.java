@@ -6,8 +6,8 @@ public record SessionSummaryResponse(
         String emgDeviceId,
         String motorDeviceId,
         String status,
-        LocalDateTime startedAt,
-        LocalDateTime endedAt,
+        String startedAt,
+        String endedAt,
         Integer durationSeconds,
         Double maxRiskScore
 ) {
