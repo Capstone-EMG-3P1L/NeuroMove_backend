@@ -14,4 +14,5 @@ public interface MotorDeviceRepository extends JpaRepository<MotorDevice, String
 
     List<MotorDevice> findAllByUserOrderByCreatedAtDesc(User user);
 
-    Optional<MotorDevice> findFirstByUserAndIsActiveTrue(User user);}
+    Optional<MotorDevice> findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(User user);
+}
