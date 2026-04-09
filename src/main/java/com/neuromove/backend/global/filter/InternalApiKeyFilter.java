@@ -16,8 +16,7 @@ import java.io.IOException;
 @Component
 public class InternalApiKeyFilter extends OncePerRequestFilter {
 
-    private static final String INTERNAL_API_PATH = "/api/ai/";
-    private static final String HEADER_NAME = "X-Internal-Key";
+    private static final String HEADER_NAME = "X-API-KEY";
 
     @Value("${security.api-key}")
     private String internalApiKey;
@@ -28,13 +27,22 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        if (!request.getRequestURI().startsWith(INTERNAL_API_PATH)) {
+
+        String requestUri = request.getRequestURI();
+
+        boolean isInternalApi =
+                requestUri.startsWith("/api/ai/")
+                        || requestUri.startsWith("/api/emg-devices-info")
+                        || requestUri.startsWith("/api/motor-devices-info");
+
+        if (!isInternalApi) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String key = request.getHeader(HEADER_NAME);
-        if (!internalApiKey.equals(key)) {
+
+        if (key == null || key.isBlank() || !internalApiKey.equals(key)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding("UTF-8");
