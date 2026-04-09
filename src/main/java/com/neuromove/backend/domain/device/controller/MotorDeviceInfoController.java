@@ -2,27 +2,25 @@ package com.neuromove.backend.domain.device.controller;
 
 import com.neuromove.backend.domain.device.dto.request.MotorDeviceInfoRequest;
 import com.neuromove.backend.domain.device.dto.response.MotorDeviceInfoResponse;
+import com.neuromove.backend.domain.device.service.DeviceInfoService;
 import com.neuromove.backend.global.api.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
-@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/motor-devices-info")
+@RequiredArgsConstructor
 public class MotorDeviceInfoController {
+
+    private final DeviceInfoService deviceInfoService;
+
     @PostMapping
     public ApiResponse<MotorDeviceInfoResponse> receiveDeviceInfo(
+            @RequestHeader("X-API-KEY") String apiKey,
             @Valid @RequestBody MotorDeviceInfoRequest request
     ) {
-        MotorDeviceInfoResponse response = new MotorDeviceInfoResponse(
-                request.motorDeviceId(),
-                request.connectionStatus(),
-                true
-        );
+        MotorDeviceInfoResponse response = deviceInfoService.saveMotorDeviceInfo(request);
 
         return ApiResponse.success(
                 "MOTOR_DEVICE_INFO_RECEIVED",
