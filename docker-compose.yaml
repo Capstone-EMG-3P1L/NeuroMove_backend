@@ -11,7 +11,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       TZ: Asia/Seoul
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -21,7 +21,7 @@ services:
     container_name: neuromove-redis
     restart: always
     ports:
-      - "6380:6379"
+      - "6379:6379"
     networks:
       - backend-network
   backend:
