@@ -2,27 +2,26 @@ package com.neuromove.backend.domain.device.controller;
 
 import com.neuromove.backend.domain.device.dto.request.EmgDeviceInfoRequest;
 import com.neuromove.backend.domain.device.dto.response.EmgDeviceInfoResponse;
+import com.neuromove.backend.domain.device.service.DeviceInfoService;
 import com.neuromove.backend.global.api.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;
 
-@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/emg-devices-info")
+@RequiredArgsConstructor
 public class EmgDeviceInfoController {
+
+    private final DeviceInfoService deviceInfoService;
+
     @PostMapping
     public ApiResponse<EmgDeviceInfoResponse> receiveDeviceInfo(
+            @RequestHeader("X-API-KEY") String apiKey,
             @Valid @RequestBody EmgDeviceInfoRequest request
     ) {
-        EmgDeviceInfoResponse response = new EmgDeviceInfoResponse(
-                request.emgDeviceId(),
-                request.connectionStatus(),
-                true
-        );
+        EmgDeviceInfoResponse response = deviceInfoService.saveEmgDeviceInfo(request);
 
         return ApiResponse.success(
                 "EMG_DEVICE_INFO_RECEIVED",
