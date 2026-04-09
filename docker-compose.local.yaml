@@ -5,10 +5,8 @@ services:
     container_name: neuromove-mysql-local
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-1234}
-      MYSQL_DATABASE: ${DB_NAME:-emg_db}
-      MYSQL_USER: ${DB_USERNAME:-root}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-1234}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
       TZ: Asia/Seoul
     ports:
       - "3307:3306"
