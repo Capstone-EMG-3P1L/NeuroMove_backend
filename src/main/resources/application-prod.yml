@@ -21,7 +21,7 @@ spring:
   data:
     redis:
       host: redis
-      port: 6380
+      port: 6379
 
 security:
   api-key: ${SECURITY_API_KEY:CHANGE_ME_IN_PRODUCTION}
