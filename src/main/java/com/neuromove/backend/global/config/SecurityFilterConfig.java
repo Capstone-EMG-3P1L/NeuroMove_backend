@@ -36,6 +36,8 @@ public class SecurityFilterConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/ai/**",
+                                "/api/emg-devices-info/**",
+                                "/api/motor-devices-info/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
