@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -18,10 +19,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DeviceInfoService {
 
+    private static final String EMG_DEVICE_INFO_PREFIX = "emg-device-info:";
+    private static final String MOTOR_DEVICE_INFO_PREFIX = "motor-device-info:";
+    private static final String EMG_DEVICE_LATEST_KEY = "emg-device-latest";
+    private static final String MOTOR_DEVICE_LATEST_KEY = "motor-device-latest";
+    private static final Duration DEVICE_INFO_TTL = Duration.ofMinutes(10);
+
     private final StringRedisTemplate stringRedisTemplate;
 
     public EmgDeviceInfoResponse saveEmgDeviceInfo(EmgDeviceInfoRequest request) {
-        String key = "emg-device-info:" + request.emgDeviceId();
+        String key = EMG_DEVICE_INFO_PREFIX + request.emgDeviceId();
 
         try {
             log.info("[EMG] save start - key={}, status={}", key, request.connectionStatus());
@@ -32,6 +39,17 @@ public class DeviceInfoService {
                             "connectionStatus", request.connectionStatus(),
                             "updatedAt", now()
                     )
+            );
+
+            Boolean expireApplied = stringRedisTemplate.expire(key, DEVICE_INFO_TTL);
+            if (Boolean.FALSE.equals(expireApplied)) {
+                log.warn("[EMG] failed to set TTL for device info key - key={}", key);
+            }
+
+            stringRedisTemplate.opsForValue().set(
+                    EMG_DEVICE_LATEST_KEY,
+                    request.emgDeviceId(),
+                    DEVICE_INFO_TTL
             );
 
             Object savedStatus = stringRedisTemplate.opsForHash().get(key, "connectionStatus");
@@ -49,7 +67,7 @@ public class DeviceInfoService {
     }
 
     public MotorDeviceInfoResponse saveMotorDeviceInfo(MotorDeviceInfoRequest request) {
-        String key = "motor-device-info:" + request.motorDeviceId();
+        String key = MOTOR_DEVICE_INFO_PREFIX + request.motorDeviceId();
 
         try {
             log.info("[MOTOR] save start - key={}, status={}", key, request.connectionStatus());
@@ -60,6 +78,17 @@ public class DeviceInfoService {
                             "connectionStatus", request.connectionStatus(),
                             "updatedAt", now()
                     )
+            );
+
+            Boolean expireApplied = stringRedisTemplate.expire(key, DEVICE_INFO_TTL);
+            if (Boolean.FALSE.equals(expireApplied)) {
+                log.warn("[MOTOR] failed to set TTL for device info key - key={}", key);
+            }
+
+            stringRedisTemplate.opsForValue().set(
+                    MOTOR_DEVICE_LATEST_KEY,
+                    request.motorDeviceId(),
+                    DEVICE_INFO_TTL
             );
 
             Object savedStatus = stringRedisTemplate.opsForHash().get(key, "connectionStatus");
@@ -74,6 +103,14 @@ public class DeviceInfoService {
             log.error("[MOTOR] redis save failed - key={}", key, e);
             throw e;
         }
+    }
+
+    public String consumeLatestEmgDeviceId() {
+        return stringRedisTemplate.opsForValue().getAndDelete(EMG_DEVICE_LATEST_KEY);
+    }
+
+    public String consumeLatestMotorDeviceId() {
+        return stringRedisTemplate.opsForValue().getAndDelete(MOTOR_DEVICE_LATEST_KEY);
     }
 
     private String now() {
