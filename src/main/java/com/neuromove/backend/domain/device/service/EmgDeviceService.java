@@ -10,6 +10,7 @@ import com.neuromove.backend.domain.user.entity.User;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,7 @@ public class EmgDeviceService {
 
     @Transactional
     public EmgDeviceRegisterResponse register(User user, EmgDeviceRegisterRequest request) {
-        String emgDeviceId = deviceInfoService.getLatestEmgDeviceId();
+        String emgDeviceId = deviceInfoService.consumeLatestEmgDeviceId();
 
         if (emgDeviceId == null || emgDeviceId.isBlank()) {
             throw new CustomException(ErrorCode.EMG_DEVICE_NOT_CONNECTED);
@@ -42,11 +43,12 @@ public class EmgDeviceService {
                 .isActive(true)
                 .build();
 
-        EmgDevice savedDevice = emgDeviceRepository.save(emgDevice);
-
-        deviceInfoService.clearLatestEmgDeviceId();
-
-        return EmgDeviceRegisterResponse.from(savedDevice);
+        try {
+            EmgDevice savedDevice = emgDeviceRepository.save(emgDevice);
+            return EmgDeviceRegisterResponse.from(savedDevice);
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.EMG_DEVICE_ALREADY_REGISTERED);
+        }
     }
 
     public EmgDeviceListResponse getMyDevices(User user) {
