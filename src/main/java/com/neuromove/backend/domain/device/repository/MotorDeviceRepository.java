@@ -1,6 +1,5 @@
 package com.neuromove.backend.domain.device.repository;
 
-import com.neuromove.backend.domain.device.entity.EmgDevice;
 import com.neuromove.backend.domain.device.entity.MotorDevice;
 import com.neuromove.backend.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
