@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MotorDeviceRegisterRequest {
 
-    @NotBlank(message = "모터 디바이스 ID는 필수입니다.")
-    private String motorDeviceId;
-
     @NotBlank(message = "디바이스 이름은 필수입니다.")
     private String name;
 }
