@@ -40,9 +40,12 @@ public class DeviceInfoService {
                             "updatedAt", now()
                     )
             );
-            stringRedisTemplate.expire(key, DEVICE_INFO_TTL);
 
-            // 최근 연결된 EMG 디바이스 ID 저장
+            Boolean expireApplied = stringRedisTemplate.expire(key, DEVICE_INFO_TTL);
+            if (Boolean.FALSE.equals(expireApplied)) {
+                log.warn("[EMG] failed to set TTL for device info key - key={}", key);
+            }
+
             stringRedisTemplate.opsForValue().set(
                     EMG_DEVICE_LATEST_KEY,
                     request.emgDeviceId(),
@@ -76,9 +79,12 @@ public class DeviceInfoService {
                             "updatedAt", now()
                     )
             );
-            stringRedisTemplate.expire(key, DEVICE_INFO_TTL);
 
-            // 최근 연결된 MOTOR 디바이스 ID 저장
+            Boolean expireApplied = stringRedisTemplate.expire(key, DEVICE_INFO_TTL);
+            if (Boolean.FALSE.equals(expireApplied)) {
+                log.warn("[MOTOR] failed to set TTL for device info key - key={}", key);
+            }
+
             stringRedisTemplate.opsForValue().set(
                     MOTOR_DEVICE_LATEST_KEY,
                     request.motorDeviceId(),
@@ -99,20 +105,12 @@ public class DeviceInfoService {
         }
     }
 
-    public String getLatestEmgDeviceId() {
-        return stringRedisTemplate.opsForValue().get(EMG_DEVICE_LATEST_KEY);
+    public String consumeLatestEmgDeviceId() {
+        return stringRedisTemplate.opsForValue().getAndDelete(EMG_DEVICE_LATEST_KEY);
     }
 
-    public String getLatestMotorDeviceId() {
-        return stringRedisTemplate.opsForValue().get(MOTOR_DEVICE_LATEST_KEY);
-    }
-
-    public void clearLatestEmgDeviceId() {
-        stringRedisTemplate.delete(EMG_DEVICE_LATEST_KEY);
-    }
-
-    public void clearLatestMotorDeviceId() {
-        stringRedisTemplate.delete(MOTOR_DEVICE_LATEST_KEY);
+    public String consumeLatestMotorDeviceId() {
+        return stringRedisTemplate.opsForValue().getAndDelete(MOTOR_DEVICE_LATEST_KEY);
     }
 
     private String now() {
