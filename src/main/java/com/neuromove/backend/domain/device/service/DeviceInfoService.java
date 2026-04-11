@@ -105,12 +105,20 @@ public class DeviceInfoService {
         }
     }
 
-    public String consumeLatestEmgDeviceId() {
-        return stringRedisTemplate.opsForValue().getAndDelete(EMG_DEVICE_LATEST_KEY);
+    public String getLatestEmgDeviceId() {
+        return stringRedisTemplate.opsForValue().get(EMG_DEVICE_LATEST_KEY);
     }
 
-    public String consumeLatestMotorDeviceId() {
-        return stringRedisTemplate.opsForValue().getAndDelete(MOTOR_DEVICE_LATEST_KEY);
+    public void deleteLatestEmgDeviceId() {
+        stringRedisTemplate.delete(EMG_DEVICE_LATEST_KEY);
+    }
+
+    public String getLatestMotorDeviceId() {
+        return stringRedisTemplate.opsForValue().get(MOTOR_DEVICE_LATEST_KEY);
+    }
+
+    public void deleteLatestMotorDeviceId() {
+        stringRedisTemplate.delete(MOTOR_DEVICE_LATEST_KEY);
     }
 
     private String now() {

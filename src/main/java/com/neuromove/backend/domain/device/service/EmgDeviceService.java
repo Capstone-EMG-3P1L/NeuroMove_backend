@@ -10,12 +10,14 @@ import com.neuromove.backend.domain.user.entity.User;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,7 +28,7 @@ public class EmgDeviceService {
 
     @Transactional
     public EmgDeviceRegisterResponse register(User user, EmgDeviceRegisterRequest request) {
-        String emgDeviceId = deviceInfoService.consumeLatestEmgDeviceId();
+        String emgDeviceId = deviceInfoService.getLatestEmgDeviceId();
 
         if (emgDeviceId == null || emgDeviceId.isBlank()) {
             throw new CustomException(ErrorCode.EMG_DEVICE_NOT_CONNECTED);
@@ -43,12 +45,20 @@ public class EmgDeviceService {
                 .isActive(true)
                 .build();
 
+        EmgDevice savedDevice;
         try {
-            EmgDevice savedDevice = emgDeviceRepository.save(emgDevice);
-            return EmgDeviceRegisterResponse.from(savedDevice);
+            savedDevice = emgDeviceRepository.save(emgDevice);
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.EMG_DEVICE_ALREADY_REGISTERED);
         }
+
+        try {
+            deviceInfoService.deleteLatestEmgDeviceId();
+        } catch (Exception e) {
+            log.warn("Failed to delete latest EMG device key", e);
+        }
+
+        return EmgDeviceRegisterResponse.from(savedDevice);
     }
 
     public EmgDeviceListResponse getMyDevices(User user) {
