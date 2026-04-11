@@ -15,8 +15,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,7 +29,7 @@ public class MotorDeviceService {
 
     @Transactional
     public MotorDeviceRegisterResponse register(User user, MotorDeviceRegisterRequest request) {
-        String motorDeviceId = deviceInfoService.consumeLatestMotorDeviceId();
+        String motorDeviceId = deviceInfoService.getLatestMotorDeviceId();
 
         if (motorDeviceId == null || motorDeviceId.isBlank()) {
             throw new CustomException(ErrorCode.MOTOR_DEVICE_NOT_CONNECTED);
@@ -45,12 +47,20 @@ public class MotorDeviceService {
                 .connectionStatus(ConnectionStatus.CONNECTED)
                 .build();
 
+        MotorDevice savedDevice;
         try {
-            MotorDevice savedDevice = motorDeviceRepository.save(motorDevice);
-            return MotorDeviceRegisterResponse.from(savedDevice);
+            savedDevice = motorDeviceRepository.save(motorDevice);
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.MOTOR_DEVICE_ALREADY_REGISTERED);
         }
+
+        try {
+            deviceInfoService.deleteLatestMotorDeviceId();
+        } catch (Exception e) {
+            log.warn("Failed to delete latest MOTOR device key", e);
+        }
+
+        return MotorDeviceRegisterResponse.from(savedDevice);
     }
 
     public MotorDeviceListResponse getMyDevices(User user) {
