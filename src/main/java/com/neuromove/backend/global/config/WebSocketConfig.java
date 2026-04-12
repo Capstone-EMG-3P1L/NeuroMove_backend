@@ -9,7 +9,7 @@ import org.springframework.web.socket.config.annotation.*;
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final MotorWebSocketHandler motorWebSocketHandler;
 
@@ -29,14 +29,5 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic");
         registry.setApplicationDestinationPrefixes("/app");
-    }
-
-    /**
-     * Raw WebSocket (모터 보드용)
-     */
-    @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(motorWebSocketHandler, "/ws/motor")
-                .setAllowedOriginPatterns("*");
     }
 }
