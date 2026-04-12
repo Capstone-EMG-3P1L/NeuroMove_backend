@@ -42,8 +42,7 @@ public class SecurityFilterConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/ws",
-                                "/ws/**",
-                                "/test/motor"
+                                "/ws/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
