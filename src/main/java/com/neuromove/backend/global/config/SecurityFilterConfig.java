@@ -43,7 +43,8 @@ public class SecurityFilterConfig {
                                 "/v3/api-docs/**",
                                 "/ws",
                                 "/ws/**",
-                                "/ws/motor"
+                                "/test/motor",
+                                "/test/session"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
