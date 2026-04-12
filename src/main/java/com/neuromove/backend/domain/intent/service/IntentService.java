@@ -3,6 +3,7 @@ package com.neuromove.backend.domain.intent.service;
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.entity.enums.CommandType;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
+import com.neuromove.backend.domain.command.service.MotorWebSocketService;
 import com.neuromove.backend.domain.fsm.entity.enums.FsmStateType;
 import com.neuromove.backend.domain.fsm.service.FsmService;
 import com.neuromove.backend.domain.intent.dto.request.IntentReceiveRequest;
@@ -36,6 +37,7 @@ public class IntentService {
     private final IntentLogRepository intentLogRepository;
     private final CommandRepository commandRepository;
     private final FsmService fsmService;
+    private final MotorWebSocketService motorWebSocketService;
 
     @Transactional
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
@@ -112,6 +114,17 @@ public class IntentService {
                 .build();
 
         Command savedCommand = commandRepository.save(command);
+
+        // 모터 웹소켓 명령 전송
+        if (savedCommand.getCommand() != CommandType.BLOCKED) {
+
+            String motorDeviceId = session.getMotorDevice().getMotorDeviceId();
+
+            motorWebSocketService.sendCommand(
+                    motorDeviceId,
+                    savedCommand.getCommand().name()
+            );
+        }
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
     }
