@@ -14,6 +14,8 @@ import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,14 +129,18 @@ public class IntentService {
 
             String motorDeviceId = session.getMotorDevice().getMotorDeviceId();
 
-            boolean sent = motorWebSocketService.sendCommand(
-                    motorDeviceId,
-                    savedCommand.getCommand().name()
-            );
+            String commandToSend = savedCommand.getCommand().name();
 
-            if (!sent) {
-                log.warn("모터 명령 전송 실패: deviceId={}, command={}", motorDeviceId, savedCommand.getCommand());
-            }
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    boolean sent = motorWebSocketService.sendCommand(motorDeviceId, commandToSend);
+
+                    if (!sent) {
+                        log.warn("모터 명령 전송 실패: deviceId={}, command={}", motorDeviceId, commandToSend);
+                    }
+                }
+            });
         }
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
