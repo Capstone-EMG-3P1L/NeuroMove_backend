@@ -21,6 +21,7 @@ public class IntentController {
     @Operation(summary = "AI 추론 결과 수신", description = "AI 서버가 분류한 intent를 수신하여 risk score 계산 후 최종 명령을 결정합니다.")
     @PostMapping("/intent")
     public ApiResponse<IntentReceiveResponse> receiveIntent(
+            @RequestHeader("X-API-KEY") String apiKey,
             @Valid @RequestBody IntentReceiveRequest request
     ) {
         IntentReceiveResponse response = intentService.receiveIntent(request);
