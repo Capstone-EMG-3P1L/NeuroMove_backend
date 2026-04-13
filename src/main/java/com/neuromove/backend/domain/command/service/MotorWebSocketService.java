@@ -22,11 +22,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class MotorWebSocketService {
 
-    /**
-     * 모터 보드에 전송 가능한 명령 allowlist
-     */
+    //모터 보드에 전송 가능한 명령 allowlist
     private static final Set<String> ALLOWED_COMMANDS =
-            Set.of("LEFT", "RIGHT", "STOP", "FINISH");
+            Set.of("FORWARD", "LEFT", "RIGHT", "STOP", "EMERGENCY_STOP", "FINISH");
 
     private final MotorWebSocketSessionManager sessionManager;
     private final ObjectMapper objectMapper;
@@ -62,9 +60,7 @@ public class MotorWebSocketService {
                 });
     }
 
-    /**
-     * 실제 메시지 전송 처리
-     */
+    // 실제 메시지 전송 처리
     private boolean send(WebSocketSession session, String command) {
         try {
             // DTO 생성

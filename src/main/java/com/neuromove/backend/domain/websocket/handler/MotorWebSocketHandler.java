@@ -21,7 +21,6 @@ public class MotorWebSocketHandler extends TextWebSocketHandler {
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
 
         JsonNode json = objectMapper.readTree(message.getPayload());
-
         String type = json.path("type").asText(null);
 
         if (type == null) {
@@ -29,11 +28,8 @@ public class MotorWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        /**
-         * 1. REGISTER 처리
-         */
+        // 1. REGISTER 처리
         if ("register".equals(type)) {
-
             String deviceId = json.path("deviceId").asText(null);
 
             if (deviceId == null) {
@@ -54,12 +50,12 @@ public class MotorWebSocketHandler extends TextWebSocketHandler {
             log.info("모터 등록됨: {}", deviceId);
         }
 
-        /**
-         * 2. drive_result 처리
-         */
+        // 2. drive_result 처리
         else if ("drive_result".equals(type)) {
 
             String status = json.path("status").asText(null);
+            String command = json.path("command").asText(null);
+            String reason = json.path("reason").asText(null);
 
             String deviceId = (String) session.getAttributes().get("deviceId");
 
@@ -68,12 +64,10 @@ public class MotorWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
 
-            log.info("모터 결과 수신: deviceId={}, status={}", deviceId, status);
+            log.info("모터 결과 수신: deviceId={}, command={}, status={}, reason={}",
+                    deviceId, command, status, reason);
         }
-
-        /**
-         * 3. 알 수 없는 메시지
-         */
+        // 3. 알 수 없는 메시지
         else {
             log.warn("알 수 없는 메시지 타입: {}", type);
         }
