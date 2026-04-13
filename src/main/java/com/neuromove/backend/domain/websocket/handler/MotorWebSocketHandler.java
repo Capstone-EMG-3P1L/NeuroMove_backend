@@ -41,6 +41,13 @@ public class MotorWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
 
+            String previousDeviceId = (String) session.getAttributes().get("deviceId");
+
+            if (previousDeviceId != null && !previousDeviceId.equals(deviceId)) {
+                sessionManager.remove(previousDeviceId, session);
+                log.info("기존 모터 매핑 제거: {}", previousDeviceId);
+            }
+
             sessionManager.register(deviceId, session);
             session.getAttributes().put("deviceId", deviceId);
 
