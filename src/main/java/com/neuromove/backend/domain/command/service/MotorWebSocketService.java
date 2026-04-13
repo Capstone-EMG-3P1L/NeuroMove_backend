@@ -9,8 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.Set;
+
 /**
  * [모터 웹소켓 명령 전송 서비스]
+ *
  * - 서버 → 모터 보드로 주행 명령을 전달하는 역할
  * - deviceId 기준으로 연결된 WebSocketSession을 찾아 메시지 전송
  */
@@ -19,6 +22,12 @@ import org.springframework.web.socket.WebSocketSession;
 @RequiredArgsConstructor
 public class MotorWebSocketService {
 
+    /**
+     * 모터 보드에 전송 가능한 명령 allowlist
+     */
+    private static final Set<String> ALLOWED_COMMANDS =
+            Set.of("LEFT", "RIGHT", "STOP", "FINISH");
+
     private final MotorWebSocketSessionManager sessionManager;
     private final ObjectMapper objectMapper;
 
@@ -26,14 +35,26 @@ public class MotorWebSocketService {
      * [모터에게 주행 명령 전송]
      *
      * @param deviceId 모터 디바이스 ID
-     * @param command  주행 명령 (FORWARD / LEFT / RIGHT / STOP)
+     * @param command  주행 명령 (LEFT / RIGHT / STOP / FINISH)
      * @return 전송 성공 여부
      */
     public boolean sendCommand(String deviceId, String command) {
 
+        // deviceId null/blank 방어
+        if (deviceId == null || deviceId.isBlank()) {
+            log.warn("모터 명령 전송 실패: deviceId가 비어 있습니다.");
+            return false;
+        }
+
+        // 허용된 command만 전송
+        if (command == null || !ALLOWED_COMMANDS.contains(command)) {
+            log.warn("모터 명령 전송 실패: 허용되지 않은 command={}", command);
+            return false;
+        }
+
         // deviceId로 현재 연결된 WebSocketSession 조회
         return sessionManager.getSession(deviceId)
-                .filter(WebSocketSession::isOpen) // 연결 살아있는지 확인
+                .filter(WebSocketSession::isOpen)
                 .map(session -> send(session, command))
                 .orElseGet(() -> {
                     log.warn("모터가 연결되어 있지 않음: deviceId={}", deviceId);
@@ -59,7 +80,6 @@ public class MotorWebSocketService {
             session.sendMessage(new TextMessage(json));
 
             log.info("모터 명령 전송 성공: {}", json);
-
             return true;
 
         } catch (Exception e) {

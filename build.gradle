@@ -1,7 +1,7 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '4.0.5'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.neuromove'
@@ -31,7 +31,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
