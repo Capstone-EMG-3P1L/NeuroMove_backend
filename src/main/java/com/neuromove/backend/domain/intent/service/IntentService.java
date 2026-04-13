@@ -3,6 +3,7 @@ package com.neuromove.backend.domain.intent.service;
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.entity.enums.CommandType;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
+import com.neuromove.backend.domain.command.service.FailSafeStateManager; // 추가: fail-safe 상태 관리
 import com.neuromove.backend.domain.command.service.MotorWebSocketService;
 import com.neuromove.backend.domain.fsm.entity.enums.FsmStateType;
 import com.neuromove.backend.domain.fsm.service.FsmService;
@@ -35,13 +36,22 @@ public class IntentService {
     private static final float EMERGENCY_STOP_THRESHOLD = 0.7f;
     private static final float FATIGUE_THRESHOLD = 0.5f;
     private static final float CONFIDENCE_THRESHOLD = 0.7f;
-    private static final long STALE_COMMAND_MS = 3000L;
+    private static final long STALE_COMMAND_MS = 30000L;
+
+    // 연속 stale 3회 시 STOP
+    private static final int MAX_CONSECUTIVE_STALE = 3;
+
+    // 이상 패턴 판별 기준값
+    private static final float ABNORMAL_SIGNAL_QUALITY_THRESHOLD = 0.2f;
+    private static final float ABNORMAL_FATIGUE_THRESHOLD = 0.9f;
+    private static final float ABNORMAL_CONFIDENCE_THRESHOLD = 0.3f;
 
     private final SessionRepository sessionRepository;
     private final IntentLogRepository intentLogRepository;
     private final CommandRepository commandRepository;
     private final FsmService fsmService;
     private final MotorWebSocketService motorWebSocketService;
+    private final FailSafeStateManager failSafeStateManager; // 세션별 fail-safe 카운트 관리
 
     @Transactional
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
@@ -61,6 +71,28 @@ public class IntentService {
 
         // [Fail-safe 3] confidence < 0.7 → BLOCKED
         boolean lowConfidence = request.getConfidence() < CONFIDENCE_THRESHOLD;
+
+        // stale 연속 횟수 관리
+        int staleCount = stale
+                ? failSafeStateManager.increaseStaleCount(session.getSessionId())
+                : 0;
+        if (!stale) {
+            failSafeStateManager.resetStaleCount(session.getSessionId());
+        }
+
+        // 이상 패턴 감지
+        boolean abnormalPattern =
+                request.getSignalQuality() < ABNORMAL_SIGNAL_QUALITY_THRESHOLD
+                        || request.getFatigueScore() > ABNORMAL_FATIGUE_THRESHOLD
+                        || request.getConfidence() < ABNORMAL_CONFIDENCE_THRESHOLD;
+
+        // 이상 패턴 카운트 관리
+        int abnormalCount = abnormalPattern
+                ? failSafeStateManager.increaseAbnormalCount(session.getSessionId())
+                : 0;
+        if (!abnormalPattern) {
+            failSafeStateManager.resetAbnormalCount(session.getSessionId());
+        }
 
         // 1. durationRatio 계산
         long elapsedMinutes = Duration.between(session.getStartedAt(), LocalDateTime.now()).toMinutes();
@@ -84,9 +116,18 @@ public class IntentService {
         // 4. speedLevel 및 최종 command 결정
         boolean accepted = riskScore < EMERGENCY_STOP_THRESHOLD && !stale && !lowConfidence;
         int speedLevel = calculateSpeedLevel(riskScore);
-        CommandType finalCommand = accepted
-                ? CommandType.valueOf(request.getIntent().name())
-                : CommandType.BLOCKED;
+
+        // fail-safe 우선 적용
+        CommandType finalCommand;
+        if (abnormalCount >= 1) {
+            finalCommand = CommandType.EMERGENCY_STOP; // 이상 패턴 감지 시 즉시 비상정지
+        } else if (staleCount >= MAX_CONSECUTIVE_STALE) {
+            finalCommand = CommandType.STOP; // stale 3회 누적 시 자동 STOP
+        } else {
+            finalCommand = accepted
+                    ? CommandType.valueOf(request.getIntent().name())
+                    : CommandType.BLOCKED;
+        }
 
         // 5. max_risk_score 업데이트
         session.updateMaxRiskScore(riskScore);
@@ -102,7 +143,7 @@ public class IntentService {
                 .fatigueComponent(fatigueComponent)
                 .stabilityComponent(stabilityComponent)
                 .durationComponent(durationComponent)
-                .accepted(accepted)
+                .accepted(finalCommand != CommandType.BLOCKED) // 최종 명령 기준으로 accepted 저장
                 .emgTimestamp(request.getTimestamp())
                 .build();
 
