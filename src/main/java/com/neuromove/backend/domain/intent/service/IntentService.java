@@ -127,10 +127,14 @@ public class IntentService {
 
             String motorDeviceId = session.getMotorDevice().getMotorDeviceId();
 
-            motorWebSocketService.sendCommand(
+            boolean sent = motorWebSocketService.sendCommand(
                     motorDeviceId,
                     savedCommand.getCommand().name()
             );
+
+            if (!sent) {
+                log.warn("모터 명령 전송 실패: deviceId={}, command={}", motorDeviceId, savedCommand.getCommand());
+            }
         }
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
