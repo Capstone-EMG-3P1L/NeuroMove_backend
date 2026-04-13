@@ -3,6 +3,7 @@ package com.neuromove.backend.domain.intent.service;
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.entity.enums.CommandType;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
+import com.neuromove.backend.domain.command.service.MotorWebSocketService;
 import com.neuromove.backend.domain.fsm.entity.enums.FsmStateType;
 import com.neuromove.backend.domain.fsm.service.FsmService;
 import com.neuromove.backend.domain.intent.dto.request.IntentReceiveRequest;
@@ -13,14 +14,18 @@ import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -36,6 +41,7 @@ public class IntentService {
     private final IntentLogRepository intentLogRepository;
     private final CommandRepository commandRepository;
     private final FsmService fsmService;
+    private final MotorWebSocketService motorWebSocketService;
 
     @Transactional
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
@@ -112,6 +118,30 @@ public class IntentService {
                 .build();
 
         Command savedCommand = commandRepository.save(command);
+
+        // 모터 웹소켓 명령 전송
+        if (savedCommand.getCommand() != CommandType.BLOCKED) {
+
+            if (session.getMotorDevice() == null) {
+                log.warn("세션에 연결된 motorDevice가 없어 명령 전송을 건너뜁니다. sessionId={}", session.getSessionId());
+                return IntentReceiveResponse.of(savedIntent, savedCommand);
+            }
+
+            String motorDeviceId = session.getMotorDevice().getMotorDeviceId();
+
+            String commandToSend = savedCommand.getCommand().name();
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    boolean sent = motorWebSocketService.sendCommand(motorDeviceId, commandToSend);
+
+                    if (!sent) {
+                        log.warn("모터 명령 전송 실패: deviceId={}, command={}", motorDeviceId, commandToSend);
+                    }
+                }
+            });
+        }
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
     }
