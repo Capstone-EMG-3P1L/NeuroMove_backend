@@ -38,4 +38,4 @@ ai:
 app:
   websocket:
     # frontend url 생기면 env에 넣고 수정
-    allowed-origins: ${FRONTEND_URL:*}
+    allowed-origins: ${FRONTEND_URL}
