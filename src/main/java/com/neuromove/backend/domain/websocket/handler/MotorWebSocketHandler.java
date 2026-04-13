@@ -74,11 +74,10 @@ public class MotorWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-
         Object deviceId = session.getAttributes().get("deviceId");
 
         if (deviceId != null) {
-            sessionManager.remove(deviceId.toString());
+            sessionManager.remove(deviceId.toString(), session);
             log.info("모터 연결 종료: {}", deviceId);
         }
     }

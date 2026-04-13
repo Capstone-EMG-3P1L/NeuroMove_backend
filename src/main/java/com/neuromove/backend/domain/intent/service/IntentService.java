@@ -17,11 +17,13 @@ import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -117,6 +119,11 @@ public class IntentService {
 
         // 모터 웹소켓 명령 전송
         if (savedCommand.getCommand() != CommandType.BLOCKED) {
+
+            if (session.getMotorDevice() == null) {
+                log.warn("세션에 연결된 motorDevice가 없어 명령 전송을 건너뜁니다. sessionId={}", session.getSessionId());
+                return IntentReceiveResponse.of(savedIntent, savedCommand);
+            }
 
             String motorDeviceId = session.getMotorDevice().getMotorDeviceId();
 

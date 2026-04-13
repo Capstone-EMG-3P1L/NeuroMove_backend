@@ -34,3 +34,8 @@ jwt:
 ai:
   server:
     url: ${AI_SERVER_URL:http://ai-server:5000}
+
+app:
+  websocket:
+    # frontend url 생기면 env에 넣고 수정
+    allowed-origins: ${FRONTEND_URL:*}

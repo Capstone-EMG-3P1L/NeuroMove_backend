@@ -16,8 +16,10 @@ public class MotorWebSocketSessionManager {
         sessions.put(deviceId, session);
     }
 
-    public void remove(String deviceId) {
-        sessions.remove(deviceId);
+    public void remove(String deviceId, WebSocketSession session) {
+        sessions.computeIfPresent(deviceId, (key, currentSession) ->
+                currentSession.getId().equals(session.getId()) ? null : currentSession
+        );
     }
 
     public Optional<WebSocketSession> getSession(String deviceId) {
