@@ -31,6 +31,8 @@ import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -174,8 +176,14 @@ public class SessionService {
             return SessionEndResponse.from(session);
         }
 
-        session.end();
-        failSafeStateManager.clear(sessionId); // 종료된 세션의 fail-safe 상태 정리
+        // 트랜잭션 커밋 이후 fail-safe 상태 정리
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                failSafeStateManager.clear(sessionId);
+            }
+        });
+
         return SessionEndResponse.from(session);
     }
 }
