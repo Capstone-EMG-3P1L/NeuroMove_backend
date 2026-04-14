@@ -4,6 +4,7 @@ import com.neuromove.backend.domain.calibration.entity.CalibrationProfile;
 import com.neuromove.backend.domain.calibration.repository.CalibrationProfileRepository;
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
+import com.neuromove.backend.domain.command.service.FailSafeStateManager;
 import com.neuromove.backend.domain.device.entity.EmgDevice;
 import com.neuromove.backend.domain.device.entity.MotorDevice;
 import com.neuromove.backend.domain.device.repository.EmgDeviceRepository;
@@ -48,6 +49,7 @@ public class SessionService {
     private final FsmStateRepository fsmStateRepository;
     private final IntentLogRepository intentLogRepository;
     private final CommandRepository commandRepository;
+    private final FailSafeStateManager failSafeStateManager;
 
     @Transactional
     public SessionStartResponse start(User user, SessionStartRequest request) {
@@ -173,6 +175,7 @@ public class SessionService {
         }
 
         session.end();
+        failSafeStateManager.clear(sessionId); // 종료된 세션의 fail-safe 상태 정리
         return SessionEndResponse.from(session);
     }
 }
