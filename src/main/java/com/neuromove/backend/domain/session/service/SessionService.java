@@ -4,6 +4,7 @@ import com.neuromove.backend.domain.calibration.entity.CalibrationProfile;
 import com.neuromove.backend.domain.calibration.repository.CalibrationProfileRepository;
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
+import com.neuromove.backend.domain.command.service.FailSafeStateManager;
 import com.neuromove.backend.domain.device.entity.EmgDevice;
 import com.neuromove.backend.domain.device.entity.MotorDevice;
 import com.neuromove.backend.domain.device.repository.EmgDeviceRepository;
@@ -30,6 +31,8 @@ import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -48,6 +51,7 @@ public class SessionService {
     private final FsmStateRepository fsmStateRepository;
     private final IntentLogRepository intentLogRepository;
     private final CommandRepository commandRepository;
+    private final FailSafeStateManager failSafeStateManager;
 
     @Transactional
     public SessionStartResponse start(User user, SessionStartRequest request) {
@@ -172,7 +176,14 @@ public class SessionService {
             return SessionEndResponse.from(session);
         }
 
-        session.end();
+        // 트랜잭션 커밋 이후 fail-safe 상태 정리
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                failSafeStateManager.clear(sessionId);
+            }
+        });
+
         return SessionEndResponse.from(session);
     }
 }
