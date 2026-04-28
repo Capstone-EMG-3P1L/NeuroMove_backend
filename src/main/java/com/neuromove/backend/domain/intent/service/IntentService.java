@@ -58,14 +58,7 @@ public class IntentService {
         Session session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.SESSION_NOT_FOUND));
 
-        // [Fail-safe 1] sequenceNumber 중복/지연 방지
-        if (session.getLastSequenceNumber() != null
-                && request.getSequenceNumber() <= session.getLastSequenceNumber()) {
-            throw new CustomException(ErrorCode.DUPLICATE_SEQUENCE);
-        }
-        session.updateLastSequenceNumber(request.getSequenceNumber());
-
-        // [Fail-safe 2] 명령 유효시간 처리 (3초 초과 시 BLOCKED)
+        // [Fail-safe 1] 명령 유효시간 처리 (3초 초과 시 BLOCKED)
         long now = Instant.now().toEpochMilli();
         boolean stale = (now - request.getTimestamp()) > STALE_COMMAND_MS;
 

@@ -13,9 +13,6 @@ public class IntentReceiveRequest {
     @NotBlank
     private String sessionId;
 
-    @NotNull
-    private Long sequenceNumber;
-
     @NotBlank
     private String emgDeviceId;
 
