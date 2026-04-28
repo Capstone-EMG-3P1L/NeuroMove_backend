@@ -41,6 +41,7 @@ services:
       JWT_ACCESS_TOKEN_EXPIRATION: 3600000
       SECURITY_API_KEY: neuromove-super-secret-key-2026
       AI_SERVER_URL: http://localhost:5000
+      FRONTEND_URL: ${FRONTEND_URL}
     networks:
       - backend-network
 volumes:
