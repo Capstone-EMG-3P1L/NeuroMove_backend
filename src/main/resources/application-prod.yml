@@ -36,6 +36,8 @@ ai:
     url: ${AI_SERVER_URL:http://ai-server:5000}
 
 app:
+  cors:
+    allowed-origins: ${FRONTEND_URL:http://localhost:5173}
   websocket:
     # frontend url 생기면 env에 넣고 수정
     allowed-origins: ${FRONTEND_URL}
