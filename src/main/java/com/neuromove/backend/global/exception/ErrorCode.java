@@ -31,7 +31,13 @@ public enum ErrorCode {
     MOTOR_DEVICE_ALREADY_REGISTERED(HttpStatus.CONFLICT, "MOTOR_DEVICE_ALREADY_REGISTERED", "이미 등록된 MOTOR 디바이스입니다."),
 
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "세션을 찾을 수 없습니다."),
-    INVALID_INTERNAL_KEY(HttpStatus.UNAUTHORIZED, "INVALID_INTERNAL_KEY", "유효하지 않은 Internal Key입니다.");
+    INVALID_INTERNAL_KEY(HttpStatus.UNAUTHORIZED, "INVALID_INTERNAL_KEY", "유효하지 않은 Internal Key입니다."),
+
+    ONBOARDING_NOT_FOUND(HttpStatus.NOT_FOUND, "ONBOARDING_NOT_FOUND", "온보딩 정보를 찾을 수 없습니다."),
+    ONBOARDING_REGISTER_NOT_FOUND(HttpStatus.BAD_REQUEST, "ONBOARDING_REGISTER_NOT_FOUND", "회원가입 정보가 입력되지 않았습니다."),
+    ONBOARDING_CALIBRATION_NOT_FOUND(HttpStatus.BAD_REQUEST, "ONBOARDING_CALIBRATION_NOT_FOUND", "캘리브레이션 정보가 입력되지 않았습니다."),
+    ONBOARDING_EMG_DEVICE_NOT_FOUND(HttpStatus.BAD_REQUEST, "ONBOARDING_EMG_DEVICE_NOT_FOUND", "EMG 디바이스 정보가 입력되지 않았습니다."),
+    ONBOARDING_MOTOR_DEVICE_NOT_FOUND(HttpStatus.BAD_REQUEST, "ONBOARDING_MOTOR_DEVICE_NOT_FOUND", "MOTOR 디바이스 정보가 입력되지 않았습니다.");
 
     private final HttpStatus status;
     private final String code;
