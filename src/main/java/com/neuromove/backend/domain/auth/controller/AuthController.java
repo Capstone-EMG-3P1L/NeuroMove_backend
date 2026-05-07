@@ -7,6 +7,8 @@ import com.neuromove.backend.domain.auth.dto.response.RegisterResponse;
 import com.neuromove.backend.domain.auth.dto.request.RefreshTokenRequest;
 import com.neuromove.backend.domain.auth.dto.response.TokenRefreshResponse;
 import com.neuromove.backend.domain.auth.jwt.CustomUserPrincipal;
+import com.neuromove.backend.global.exception.CustomException;
+import com.neuromove.backend.global.exception.ErrorCode;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.neuromove.backend.domain.auth.service.AuthService;
 import com.neuromove.backend.global.api.ApiResponse;
@@ -48,11 +50,14 @@ public class AuthController {
         );
     }
 
-    @SecurityRequirement(name = "BearerAuth")
     @PostMapping("/logout")
+    @SecurityRequirement(name = "BearerAuth")
     public ApiResponse<Void> logout(
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
+        if (principal == null) {
+            throw new CustomException(ErrorCode.AUTHENTICATION_FAILED);
+        }
 
         authService.logout(principal.userId());
 
