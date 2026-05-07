@@ -1,6 +1,5 @@
 package com.neuromove.backend.domain.calibration.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -8,6 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CalibrationStartRequest {
 
-    @NotBlank
+    private String onboardingId;
+
     private String emgDeviceId;
 }
