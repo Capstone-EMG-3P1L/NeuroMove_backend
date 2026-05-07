@@ -126,9 +126,10 @@ public class AuthService {
 
     /**
      * Access Token 재발급
-     * - Refresh Token 검증
-     * - Redis 저장값 검증
-     * - 새로운 Access / Refresh Token 발급
+     * - Refresh Token JWT 자체 유효성 검증
+     * - Refresh Token 내부 userId / username 추출
+     * - 새로운 Access Token / Refresh Token 발급
+     * - Redis에 저장된 Refresh Token을 새로운 값으로 교체
      */
     public TokenRefreshResponse refresh(RefreshTokenRequest request) {
 
@@ -143,9 +144,6 @@ public class AuthService {
         String userId = jwtTokenProvider.getUserId(refreshToken);
         String username = jwtTokenProvider.getUsername(refreshToken);
 
-        // Redis 저장 Refresh Token과 비교 검증
-        refreshTokenService.validate(userId, refreshToken);
-
         // 새로운 Access Token 발급
         String newAccessToken =
                 jwtTokenProvider.createAccessToken(userId, username);
@@ -154,8 +152,21 @@ public class AuthService {
         String newRefreshToken =
                 jwtTokenProvider.createRefreshToken(userId, username);
 
-        // Redis 값 갱신 (Refresh Token Rotation)
-        refreshTokenService.save(userId, newRefreshToken);
+        /*
+         * Refresh Token Rotation
+         * - 기존 Refresh Token이 Redis에 저장된 값과 일치하는지 검증
+         * - 일치하면 새로운 Refresh Token으로 Redis 값을 교체
+         *
+         * 기존 코드처럼 validate()와 save()를 AuthService에서 따로 호출하면
+         * 동시 재발급 요청 시 두 요청이 모두 검증을 통과할 수 있다.
+         * 따라서 RefreshTokenService의 rotate() 메서드에서
+         * 검증과 교체를 하나의 흐름으로 처리한다.
+         */
+        refreshTokenService.rotate(
+                userId,
+                refreshToken,
+                newRefreshToken
+        );
 
         // 재발급 응답 반환
         return TokenRefreshResponse.builder()

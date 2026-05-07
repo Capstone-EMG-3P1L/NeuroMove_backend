@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -51,5 +52,23 @@ public class RefreshTokenService {
 
     private String getKey(String userId) {
         return REFRESH_TOKEN_PREFIX + userId;
+    }
+
+    /**
+     * Refresh Token Rotation
+     * - 기존 Refresh Token 검증
+     * - 새로운 Refresh Token 저장
+     */
+    public void rotate(
+            String userId,
+            String oldRefreshToken,
+            String newRefreshToken
+    ) {
+
+        // 기존 Refresh Token이 Redis 저장값과 일치하는지 검증
+        validate(userId, oldRefreshToken);
+
+        // 검증에 성공하면 새로운 Refresh Token으로 Redis 값 갱신
+        save(userId, newRefreshToken);
     }
 }
