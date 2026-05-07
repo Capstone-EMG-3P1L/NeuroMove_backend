@@ -144,13 +144,17 @@ public class AuthService {
         String userId = jwtTokenProvider.getUserId(refreshToken);
         String username = jwtTokenProvider.getUsername(refreshToken);
 
+        // 토큰에 담긴 사용자가 현재 DB에도 존재하는지 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         // 새로운 Access Token 발급
         String newAccessToken =
-                jwtTokenProvider.createAccessToken(userId, username);
+                jwtTokenProvider.createAccessToken(user.getUserId(), user.getUsername());
 
         // 새로운 Refresh Token 발급
         String newRefreshToken =
-                jwtTokenProvider.createRefreshToken(userId, username);
+                jwtTokenProvider.createRefreshToken(user.getUserId(), user.getUsername());
 
         /*
          * Refresh Token Rotation
