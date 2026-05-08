@@ -1,5 +1,6 @@
 package com.neuromove.backend.domain.calibration.service;
 
+import com.neuromove.backend.domain.auth.service.OnboardingRedisService;
 import com.neuromove.backend.domain.calibration.dto.request.CalibrationEndRequest;
 import com.neuromove.backend.domain.calibration.dto.request.CalibrationStartRequest;
 import com.neuromove.backend.domain.calibration.dto.request.CalibrationStepUpdateRequest;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class CalibrationService {
     private final CalibrationProfileRepository calibrationProfileRepository;
     private final EmgDeviceRepository emgDeviceRepository;
     private final AiCalibrationClient aiCalibrationClient;
+    private final OnboardingRedisService onboardingRedisService;
 
     @Transactional
     public CalibrationStartResponse start(User user, CalibrationStartRequest request) {
@@ -119,6 +122,75 @@ public class CalibrationService {
         if (!session.getUser().getUserId().equals(user.getUserId())) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
+    }
+
+    /**
+     * 온보딩 모드 Calibration 시작
+     * - User / EmgDevice가 아직 DB에 없음 → DB 조회 안 함
+     * - EmgDevice가 Redis에 등록돼 있는지만 확인
+     * - calibrationSessionId는 직접 UUID 생성 (DB 시퀀스 못 씀)
+     * - 어떤 Entity도 만들지 않고 sessionId만 Redis에 표시
+     *
+     * 트랜잭션을 안 붙이는 이유: DB를 전혀 건드리지 않음
+     */
+    public CalibrationStartResponse startForOnboarding(CalibrationStartRequest request) {
+        // EMG 디바이스가 Redis에 등록돼 있는지 확인 (없으면 ONBOARDING_EMG_DEVICE_NOT_FOUND)
+        OnboardingRedisService.DeviceData emgDevice =
+                onboardingRedisService.getEmgDevice(request.getOnboardingId());
+
+        // sessionId를 직접 UUID로 생성
+        // CalibrationSession entity의 PrePersist도 UUID 생성을 사용하므로 호환됨
+        String sessionId = UUID.randomUUID().toString();
+
+        // Redis에 sessionId 저장 (calibration 진행 중임을 표시)
+        onboardingRedisService.saveCalibrationSession(request.getOnboardingId(), sessionId);
+
+        // TODO: AI 서버 연동 후 주석 해제 (기존 start과 동일)
+        // aiCalibrationClient.start(...);
+
+        return CalibrationStartResponse.ofOnboarding(sessionId, emgDevice.deviceId());
+    }
+
+    /**
+     * 온보딩 모드 Calibration 단계 변경
+     * - DB Session이 없으므로 Redis에 저장된 currentStep을 갱신
+     * - 기존 updateStep과 달리 status/completedSteps 추적은 하지 않음
+     *   (complete 단계에서 어차피 COMPLETED 상태로 한 번에 저장)
+     * - AI 서버 연동은 기존 updateStep과 동일하게 추가 가능 (TODO)
+     */
+    public CalibrationStepUpdateResponse updateStepForOnboarding(CalibrationStepUpdateRequest request) {
+        // Redis의 calibration hash가 존재해야 (start이 호출됐어야) updateStep 가능
+        // updateCalibrationStep 내부에서 onboardingId 검증도 함께 수행됨
+        onboardingRedisService.updateCalibrationStep(
+                request.getOnboardingId(),
+                request.getStep().name()
+        );
+
+        // TODO: AI 서버 연동 후 주석 해제 (기존 updateStep과 동일)
+        // aiCalibrationClient.updateStep(...);
+
+        return CalibrationStepUpdateResponse.ofOnboarding(
+                request.getCalibrationSessionId(),
+                request.getStep()
+        );
+    }
+
+    /**
+     * 온보딩 모드 Calibration 종료
+     * - DB Entity(Session/Profile) 만들지 않음
+     * - 결과(threshold, baseline 등)를 Redis에 저장만
+     * - complete 단계에서 한 번에 Entity로 변환해 DB 저장
+     */
+    public CalibrationEndResponse endForOnboarding(CalibrationEndRequest request) {
+        // TODO: AI 서버 연동 후 finish 호출 추가 (기존 end와 동일)
+
+        // 결과를 Redis에 저장 (실내부에서 onboardingId 검증도 함께 수행됨)
+        onboardingRedisService.saveCalibrationResult(request);
+
+        return CalibrationEndResponse.ofOnboarding(
+                request.getCalibrationSessionId(),
+                request.getSignalQuality()
+        );
     }
 
     public CalibrationProfileResponse getProfile(User user) {

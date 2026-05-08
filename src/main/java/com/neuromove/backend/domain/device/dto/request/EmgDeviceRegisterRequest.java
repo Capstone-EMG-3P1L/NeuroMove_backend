@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EmgDeviceRegisterRequest {
 
+    @NotBlank(message = "onboardingId는 필수입니다.")
+    private String onboardingId;
+
     @NotBlank(message = "디바이스 이름은 필수입니다.")
     private String name;
 }
