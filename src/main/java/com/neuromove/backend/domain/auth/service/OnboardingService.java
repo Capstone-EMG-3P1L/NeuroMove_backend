@@ -19,7 +19,6 @@ import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -44,7 +43,6 @@ public class OnboardingService {
     private final CalibrationSessionRepository calibrationSessionRepository;
     private final CalibrationProfileRepository calibrationProfileRepository;
 
-    private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
 
@@ -69,11 +67,14 @@ public class OnboardingService {
         }
 
         // 3. User 저장
+        // - password는 startOnboarding에서 이미 인코딩한 값을 그대로 사용
+        // - saveAndFlush로 즉시 INSERT 시켜야 unique 제약 위반이 같은 try 블록에서 잡힘
+        //   (save는 commit 시점까지 flush를 미루기 때문에 catch가 해당 위치에서 동작 안 할 수 있음)
         User user;
         try {
-            user = userRepository.save(User.builder()
+            user = userRepository.saveAndFlush(User.builder()
                     .username(registerData.username())
-                    .password(passwordEncoder.encode(registerData.password()))
+                    .password(registerData.password())
                     .name(registerData.name())
                     .build());
         } catch (DataIntegrityViolationException e) {
@@ -84,7 +85,7 @@ public class OnboardingService {
         // 4. EmgDevice 저장
         EmgDevice emgDevice;
         try {
-            emgDevice = emgDeviceRepository.save(EmgDevice.builder()
+            emgDevice = emgDeviceRepository.saveAndFlush(EmgDevice.builder()
                     .emgDeviceId(emgDeviceData.deviceId())
                     .user(user)
                     .name(emgDeviceData.name())
@@ -96,7 +97,7 @@ public class OnboardingService {
 
         // 5. MotorDevice 저장
         try {
-            motorDeviceRepository.save(MotorDevice.builder()
+            motorDeviceRepository.saveAndFlush(MotorDevice.builder()
                     .motorDeviceId(motorDeviceData.deviceId())
                     .user(user)
                     .name(motorDeviceData.name())
