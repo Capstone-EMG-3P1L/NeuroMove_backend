@@ -24,4 +24,17 @@ public class CalibrationStepUpdateResponse {
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
+
+    /**
+     * 온보딩 모드 응답 팩토리
+     * - DB 세션 없이 sessionId와 step 정보만으로 응답 생성
+     */
+    public static CalibrationStepUpdateResponse ofOnboarding(String calibrationSessionId, CalibrationStep currentStep) {
+        return CalibrationStepUpdateResponse.builder()
+                .calibrationSessionId(calibrationSessionId)
+                .currentStep(currentStep)
+                .nextStep(currentStep.next())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
 }

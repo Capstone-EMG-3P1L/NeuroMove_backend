@@ -10,6 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CalibrationStepUpdateRequest {
 
+    /**
+     * 온보딩 모드에서 사용. null이면 일반 모드(JWT 인증된 사용자).
+     */
+    private String onboardingId;
+
     @NotBlank
     private String calibrationSessionId;
 

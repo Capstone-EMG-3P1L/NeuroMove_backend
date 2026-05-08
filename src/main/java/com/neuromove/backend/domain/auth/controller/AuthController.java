@@ -1,9 +1,7 @@
 package com.neuromove.backend.domain.auth.controller;
 
 import com.neuromove.backend.domain.auth.dto.request.LoginRequest;
-import com.neuromove.backend.domain.auth.dto.request.RegisterRequest;
 import com.neuromove.backend.domain.auth.dto.response.LoginResponse;
-import com.neuromove.backend.domain.auth.dto.response.RegisterResponse;
 import com.neuromove.backend.domain.auth.dto.request.RefreshTokenRequest;
 import com.neuromove.backend.domain.auth.dto.response.TokenRefreshResponse;
 import com.neuromove.backend.domain.auth.jwt.CustomUserPrincipal;
@@ -23,12 +21,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-
-    @PostMapping("/register")
-    public ApiResponse<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        RegisterResponse response = authService.register(request);
-        return ApiResponse.success("USER_REGISTERED", "회원가입이 완료되었습니다.", response);
-    }
 
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -67,4 +59,5 @@ public class AuthController {
                 null
         );
     }
+
 }
