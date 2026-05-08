@@ -26,13 +26,15 @@ public class OnboardingRedisService {
 
     /**
      * 회원가입 정보 Redis 임시 저장
+     * - password는 호출하는 쪽(AuthService)에서 이미 인코딩한 값을 받음
+     * - Redis에는 절대 평문 비밀번호가 저장되지 않도록 보장
      */
-    public String saveRegisterData(RegisterRequest request) {
+    public String saveRegisterData(RegisterRequest request, String encodedPassword) {
         String onboardingId = UUID.randomUUID().toString();
 
         Map<String, String> values = new HashMap<>();
         values.put("username", request.getUsername());
-        values.put("password", request.getPassword());
+        values.put("password", encodedPassword);
         values.put("name", request.getName());
 
         saveHash(registerKey(onboardingId), values);
@@ -62,12 +64,18 @@ public class OnboardingRedisService {
      * Calibration 단계 업데이트
      * - updateStep 호출 시 currentStep만 갱신
      * - completedSteps는 굳이 별도 추적하지 않음 (complete에서 어차피 모든 단계 통과로 간주)
+     * - /start 호출 전 /step이 호출되면 partial state가 생기므로 calibration key 존재 여부 검증
      */
     public void updateCalibrationStep(
             String onboardingId,
             String currentStep
     ) {
         validateOnboardingExists(onboardingId);
+
+        // /calibration/start 가 먼저 호출됐는지 확인
+        if (!Boolean.TRUE.equals(stringRedisTemplate.hasKey(calibrationKey(onboardingId)))) {
+            throw new CustomException(ErrorCode.ONBOARDING_CALIBRATION_NOT_FOUND);
+        }
 
         // 기존 hash 유지하면서 currentStep만 업데이트
         stringRedisTemplate.opsForHash().put(
@@ -81,9 +89,16 @@ public class OnboardingRedisService {
 
     /**
      * Calibration 결과 저장
+     * - /start 호출 후에만 호출 가능
+     * - phase="ENDED" 마커를 함께 저장하여 complete 단계에서 "/end가 정상 호출되었는지" 검증
      */
     public void saveCalibrationResult(CalibrationEndRequest request) {
         validateOnboardingExists(request.getOnboardingId());
+
+        // /calibration/start 가 먼저 호출됐는지 확인
+        if (!Boolean.TRUE.equals(stringRedisTemplate.hasKey(calibrationKey(request.getOnboardingId())))) {
+            throw new CustomException(ErrorCode.ONBOARDING_CALIBRATION_NOT_FOUND);
+        }
 
         Map<String, String> values = new HashMap<>();
 
@@ -107,6 +122,9 @@ public class OnboardingRedisService {
         put(values, "fatigueBaseline", request.getFatigueBaseline());
 
         put(values, "signalQuality", request.getSignalQuality());
+
+        // /end 호출 완료 마커
+        values.put("phase", "ENDED");
 
         saveHash(calibrationKey(request.getOnboardingId()), values);
     }
@@ -192,10 +210,12 @@ public class OnboardingRedisService {
     /**
      * Calibration 결과 조회
      * - end 단계에서 저장한 결과(threshold, baseline 등) 반환
+     * - phase=="ENDED" 마커가 없으면 /end가 호출되지 않은 상태이므로 거부
+     *   (그렇지 않으면 /start만 부르고 /complete를 호출했을 때 빈 profile이 저장됨)
      */
     public CalibrationData getCalibrationData(String onboardingId) {
         Map<String, String> data = readHash(calibrationKey(onboardingId));
-        if (data.isEmpty()) {
+        if (data.isEmpty() || !"ENDED".equals(data.get("phase"))) {
             throw new CustomException(ErrorCode.ONBOARDING_CALIBRATION_NOT_FOUND);
         }
         return new CalibrationData(

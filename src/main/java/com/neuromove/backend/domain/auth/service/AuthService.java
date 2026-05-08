@@ -43,14 +43,18 @@ public class AuthService {
      * 에러를 받으면 처음부터 다시 해야 하므로 UX가 매우 나쁨.
      * 다만 시작 단계 이후 다른 사용자가 같은 username을 가져갈 수 있는 race condition은
      * 남아있으므로, complete 단계에서 한 번 더 검사한다.
+     *
+     * 비밀번호는 Redis에 저장되기 전에 미리 인코딩해서 평문 노출을 막는다.
+     * (Redis dump / 메모리 덤프 / 운영자 접근 등 노출 경로를 차단)
      */
-    @Transactional(readOnly = true)
     public OnboardingStartResponse startOnboarding(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
         }
 
-        String onboardingId = onboardingRedisService.saveRegisterData(request);
+        // Redis에 평문 password를 저장하지 않도록 미리 인코딩
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        String onboardingId = onboardingRedisService.saveRegisterData(request, encodedPassword);
 
         return OnboardingStartResponse.builder()
                 .onboardingId(onboardingId)
