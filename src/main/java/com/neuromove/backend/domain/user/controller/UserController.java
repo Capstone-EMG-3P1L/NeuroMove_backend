@@ -6,12 +6,14 @@ import com.neuromove.backend.domain.user.dto.response.UserStatusResponse;
 import com.neuromove.backend.domain.user.service.UserService;
 import com.neuromove.backend.global.api.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "User", description = "내 정보 / 세션 로그 조회")
 @SecurityRequirement(name = "BearerAuth")
 @RequiredArgsConstructor
 @RestController

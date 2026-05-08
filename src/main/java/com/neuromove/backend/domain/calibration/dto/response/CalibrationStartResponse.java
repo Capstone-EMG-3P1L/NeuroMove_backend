@@ -27,4 +27,20 @@ public class CalibrationStartResponse {
                 .startedAt(session.getStartedAt())
                 .build();
     }
+
+    /**
+     * 온보딩 모드 응답 팩토리
+     * - DB 세션이 아직 없으므로 sessionId는 직접 생성한 UUID
+     * - emgDeviceId는 Redis에 등록된 디바이스 ID
+     * - 초기 상태는 IN_PROGRESS / REST 단계로 시작
+     */
+    public static CalibrationStartResponse ofOnboarding(String calibrationSessionId, String emgDeviceId) {
+        return CalibrationStartResponse.builder()
+                .calibrationSessionId(calibrationSessionId)
+                .emgDeviceId(emgDeviceId)
+                .status(CalibrationStatus.IN_PROGRESS)
+                .currentStep(CalibrationStep.REST)
+                .startedAt(java.time.LocalDateTime.now())
+                .build();
+    }
 }

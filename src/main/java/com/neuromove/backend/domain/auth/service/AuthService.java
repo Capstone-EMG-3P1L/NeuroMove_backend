@@ -5,7 +5,7 @@ import com.neuromove.backend.domain.auth.dto.request.RefreshTokenRequest;
 import com.neuromove.backend.domain.auth.dto.request.RegisterRequest;
 import com.neuromove.backend.domain.auth.dto.response.LoginResponse;
 import com.neuromove.backend.domain.auth.dto.response.LoginUserResponse;
-import com.neuromove.backend.domain.auth.dto.response.RegisterResponse;
+import com.neuromove.backend.domain.auth.dto.response.OnboardingStartResponse;
 import com.neuromove.backend.domain.auth.dto.response.TokenRefreshResponse;
 import com.neuromove.backend.domain.auth.jwt.JwtTokenProvider;
 import com.neuromove.backend.domain.user.entity.User;
@@ -13,7 +13,6 @@ import com.neuromove.backend.domain.user.repository.UserRepository;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,56 +29,36 @@ public class AuthService {
     // Redis 기반 Refresh Token 저장/검증 서비스
     private final RefreshTokenService refreshTokenService;
 
-    /**
-     * 회원가입
-     * - 사용자 저장
-     * - access token / refresh token 발급
-     * - refresh token Redis 저장
-     */
-    @Transactional
-    public RegisterResponse register(RegisterRequest request) {
+    // 온보딩 임시 데이터 Redis 저장 서비스
+    private final OnboardingRedisService onboardingRedisService;
 
-        // 이미 존재하는 username인지 검사
+    /**
+     * 온보딩 시작
+     * - 회원 정보를 DB에 저장하지 않고 Redis에 임시 저장
+     * - onboardingId 발급하여 이후 단계(EMG/Motor/Calibration)에서 사용하도록 반환
+     * - 마지막 complete 단계에서 비로소 User Entity로 DB에 저장됨
+     *
+     * 시작 시점에 username 중복을 미리 검사하는 이유:
+     * 사용자가 EMG/Motor/Calibration 다 끝내고 마지막 단계에서 "이미 사용 중인 ID"
+     * 에러를 받으면 처음부터 다시 해야 하므로 UX가 매우 나쁨.
+     * 다만 시작 단계 이후 다른 사용자가 같은 username을 가져갈 수 있는 race condition은
+     * 남아있으므로, complete 단계에서 한 번 더 검사한다.
+     *
+     * 비밀번호는 Redis에 저장되기 전에 미리 인코딩해서 평문 노출을 막는다.
+     * (Redis dump / 메모리 덤프 / 운영자 접근 등 노출 경로를 차단)
+     */
+    public OnboardingStartResponse startOnboarding(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
         }
 
-        User user = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
+        // Redis에 평문 password를 저장하지 않도록 미리 인코딩
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        String onboardingId = onboardingRedisService.saveRegisterData(request, encodedPassword);
+
+        return OnboardingStartResponse.builder()
+                .onboardingId(onboardingId)
                 .build();
-
-        try {
-            User savedUser = userRepository.save(user);
-
-            // Access Token 생성
-            String accessToken = jwtTokenProvider.createAccessToken(
-                    savedUser.getUserId(),
-                    savedUser.getUsername()
-            );
-
-            // Refresh Token 생성
-            String refreshToken = jwtTokenProvider.createRefreshToken(
-                    savedUser.getUserId(),
-                    savedUser.getUsername()
-            );
-
-            // Redis에 Refresh Token 저장
-            refreshTokenService.save(savedUser.getUserId(), refreshToken);
-
-            // 회원가입 응답 반환
-            return RegisterResponse.of(savedUser, accessToken, refreshToken);
-
-        } catch (DataIntegrityViolationException e) {
-
-            // DB unique 제약 조건 예외 처리
-            if (isUsernameDuplicateException(e)) {
-                throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
-            }
-
-            throw e;
-        }
     }
 
     /**
@@ -186,24 +165,5 @@ public class AuthService {
      */
     public void logout(String userId) {
         refreshTokenService.delete(userId);
-    }
-
-    // username 중복 예외 검사
-    private boolean isUsernameDuplicateException(DataIntegrityViolationException e) {
-
-        Throwable cause = e;
-
-        while (cause != null) {
-
-            if (cause.getMessage() != null
-                    && cause.getMessage().toLowerCase().contains("username")) {
-
-                return true;
-            }
-
-            cause = cause.getCause();
-        }
-
-        return false;
     }
 }
