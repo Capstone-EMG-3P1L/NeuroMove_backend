@@ -9,10 +9,12 @@ import com.neuromove.backend.global.api.ApiResponse;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "MOTOR Device", description = "MOTOR 디바이스 등록 / 조회 / 펌웨어 수신")
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/motor-devices")

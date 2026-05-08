@@ -11,10 +11,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.neuromove.backend.domain.auth.service.AuthService;
 import com.neuromove.backend.global.api.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Auth", description = "로그인 / 토큰 재발급 / 로그아웃")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
