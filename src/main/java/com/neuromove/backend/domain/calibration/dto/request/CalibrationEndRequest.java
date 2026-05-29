@@ -22,9 +22,10 @@ public class CalibrationEndRequest {
 
     private Float activationThreshold;
 
+    private Float intentThresholdRest;
     private Float intentThresholdLeft;
     private Float intentThresholdRight;
-    private Float intentThresholdForward;
+    private Float intentThresholdStop;
 
     private Float fatigueBaseline;
 

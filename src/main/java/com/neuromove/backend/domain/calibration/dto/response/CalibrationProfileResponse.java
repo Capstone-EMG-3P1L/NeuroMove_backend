@@ -19,9 +19,10 @@ public class CalibrationProfileResponse {
     private Float ch3Mean;
     private Float ch3Std;
     private Float activationThreshold;
+    private Float intentThresholdRest;
     private Float intentThresholdLeft;
     private Float intentThresholdRight;
-    private Float intentThresholdForward;
+    private Float intentThresholdStop;
     private Float fatigueBaseline;
     private Float signalQuality;
     private boolean isActive;
@@ -38,9 +39,10 @@ public class CalibrationProfileResponse {
                 .ch3Mean(profile.getCh3Mean())
                 .ch3Std(profile.getCh3Std())
                 .activationThreshold(profile.getActivationThreshold())
+                .intentThresholdRest(profile.getIntentThresholdRest())
                 .intentThresholdLeft(profile.getIntentThresholdLeft())
                 .intentThresholdRight(profile.getIntentThresholdRight())
-                .intentThresholdForward(profile.getIntentThresholdForward())
+                .intentThresholdStop(profile.getIntentThresholdStop())
                 .fatigueBaseline(profile.getFatigueBaseline())
                 .signalQuality(profile.getSignalQuality())
                 .isActive(profile.isActive())

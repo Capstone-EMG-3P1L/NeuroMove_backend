@@ -47,14 +47,17 @@ public class CalibrationProfile {
     @Column(name = "activation_threshold")
     private Float activationThreshold;
 
+    @Column(name = "intent_threshold_rest")
+    private Float intentThresholdRest;
+
     @Column(name = "intent_threshold_left")
     private Float intentThresholdLeft;
 
     @Column(name = "intent_threshold_right")
     private Float intentThresholdRight;
 
-    @Column(name = "intent_threshold_forward")
-    private Float intentThresholdForward;
+    @Column(name = "intent_threshold_stop")
+    private Float intentThresholdStop;
 
     @Column(name = "fatigue_baseline")
     private Float fatigueBaseline;
