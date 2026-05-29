@@ -5,6 +5,7 @@ import com.neuromove.backend.domain.command.entity.enums.CommandType;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
 import com.neuromove.backend.domain.command.service.FailSafeStateManager;
 import com.neuromove.backend.domain.command.service.MotorWebSocketService;
+import com.neuromove.backend.domain.command.service.TurnControlManager;
 import com.neuromove.backend.domain.fsm.entity.enums.FsmStateType;
 import com.neuromove.backend.domain.fsm.service.FsmService;
 import com.neuromove.backend.domain.intent.dto.request.IntentReceiveRequest;
@@ -51,7 +52,8 @@ public class IntentService {
     private final CommandRepository commandRepository;
     private final FsmService fsmService;
     private final MotorWebSocketService motorWebSocketService;
-    private final FailSafeStateManager failSafeStateManager; // 세션별 fail-safe 카운트 관리
+    private final FailSafeStateManager failSafeStateManager;
+    private final TurnControlManager turnControlManager;    // 회전 확정 + FORWARD 예약
 
     @Transactional
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
@@ -192,14 +194,13 @@ public class IntentService {
 
             String commandToSend = savedCommand.getCommand().name();
 
+            final String sessionIdForCallback = session.getSessionId();
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    boolean sent = motorWebSocketService.sendCommand(motorDeviceId, commandToSend);
-
-                    if (!sent) {
-                        log.warn("모터 명령 전송 실패: deviceId={}, command={}", motorDeviceId, commandToSend);
-                    }
+                    // LEFT/RIGHT: 연속 3회 확정 + 500ms 후 FORWARD 자동 전송
+                    // FORWARD/STOP 등: 즉시 전송
+                    turnControlManager.process(sessionIdForCallback, motorDeviceId, commandToSend);
                 }
             });
         }
