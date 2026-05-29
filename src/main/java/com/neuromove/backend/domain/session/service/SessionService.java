@@ -37,7 +37,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import com.neuromove.backend.infrastructure.ai.session.AiSessionClient;
+import com.neuromove.backend.infrastructure.ai.session.dto.*;
 
 @Service
 @RequiredArgsConstructor
@@ -54,14 +58,14 @@ public class SessionService {
     private final CommandRepository commandRepository;
     private final FailSafeStateManager failSafeStateManager;
     private final TurnControlManager   turnControlManager;
+    private final AiSessionClient aiSessionClient;
 
     @Transactional
     public SessionStartResponse start(User user, SessionStartRequest request) {
-        CalibrationProfile profile = calibrationProfileRepository.findById(request.getProfileId())
+        // 가장 최근 활성 CalibrationProfile 자동 조회
+        CalibrationProfile profile = calibrationProfileRepository
+                .findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .orElseThrow(() -> new CustomException(ErrorCode.CALIBRATION_PROFILE_NOT_FOUND));
-        if (!profile.getUser().getUserId().equals(user.getUserId())) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
 
         EmgDevice emgDevice = emgDeviceRepository.findById(request.getEmgDeviceId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EMG_DEVICE_NOT_FOUND));
@@ -83,6 +87,18 @@ public class SessionService {
                 .build();
 
         Session saved = sessionRepository.save(session);
+
+        // AI 서버에 세션 시작 요청 (최근 calibration 정보 포함)
+        aiSessionClient.start(
+                AiSessionStartRequest.builder()
+                        .sessionId(saved.getSessionId())
+                        .userId(user.getUserId())
+                        .deviceId(emgDevice.getEmgDeviceId())
+                        .profileId(profile.getProfileId())
+                        .calibration(toAiCalibrationSnapshot(profile))
+                        .build()
+        );
+
         return SessionStartResponse.from(saved);
     }
 
@@ -165,6 +181,33 @@ public class SessionService {
         return SessionStatusResponse.of(session, latestFsmState, latestCommand);
     }
 
+    /**
+     * CalibrationProfile -> AI 서버용 CalibrationSnapshot 변환
+     * intentThresholds: REST, LEFT, RIGHT, STOP 4개를 Map으로 전달
+     */
+    private AiSessionStartRequest.CalibrationSnapshot toAiCalibrationSnapshot(CalibrationProfile profile) {
+        Map<String, Double> intentThresholds = new LinkedHashMap<>();
+        intentThresholds.put("REST", profile.getIntentThresholdRest() != null ? profile.getIntentThresholdRest().doubleValue() : null);
+        intentThresholds.put("LEFT", profile.getIntentThresholdLeft() != null ? profile.getIntentThresholdLeft().doubleValue() : null);
+        intentThresholds.put("RIGHT", profile.getIntentThresholdRight() != null ? profile.getIntentThresholdRight().doubleValue() : null);
+        intentThresholds.put("STOP", profile.getIntentThresholdStop() != null ? profile.getIntentThresholdStop().doubleValue() : null);
+
+        return AiSessionStartRequest.CalibrationSnapshot.builder()
+                .baseline(AiSessionStartRequest.Baseline.builder()
+                        .ch1Mean(profile.getCh1Mean() != null ? profile.getCh1Mean().doubleValue() : null)
+                        .ch1Std(profile.getCh1Std() != null ? profile.getCh1Std().doubleValue() : null)
+                        .ch2Mean(profile.getCh2Mean() != null ? profile.getCh2Mean().doubleValue() : null)
+                        .ch2Std(profile.getCh2Std() != null ? profile.getCh2Std().doubleValue() : null)
+                        .ch3Mean(profile.getCh3Mean() != null ? profile.getCh3Mean().doubleValue() : null)
+                        .ch3Std(profile.getCh3Std() != null ? profile.getCh3Std().doubleValue() : null)
+                        .build())
+                .activationThreshold(profile.getActivationThreshold() != null ? profile.getActivationThreshold().doubleValue() : null)
+                .intentThresholds(intentThresholds)
+                .fatigueBaseline(profile.getFatigueBaseline() != null ? profile.getFatigueBaseline().doubleValue() : null)
+                .signalQuality(profile.getSignalQuality() != null ? profile.getSignalQuality().doubleValue() : null)
+                .build();
+    }
+
     @Transactional
     public SessionEndResponse end(String sessionId, String userId, SessionEndRequest request) {
         Session session = sessionRepository.findById(sessionId)
@@ -180,6 +223,13 @@ public class SessionService {
 
         // 세션 상태 ENDED로 업데이트 (endedAt, durationSeconds 포함)
         session.end();
+
+        // AI 서버에 세션 종료 요청
+        aiSessionClient.end(
+                AiSessionEndRequest.builder()
+                        .sessionId(sessionId)
+                        .build()
+        );
 
         // 트랜잭션 커밋 이후 메모리 상태 정리
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
