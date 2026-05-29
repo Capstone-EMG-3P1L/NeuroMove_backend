@@ -4,6 +4,7 @@ import com.neuromove.backend.infrastructure.ai.session.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Component
@@ -16,11 +17,18 @@ public class AiSessionClient {
     private String aiServerUrl;
 
     public AiSessionStartResponse start(AiSessionStartRequest request) {
-        return restTemplate.postForObject(
-                aiServerUrl + "/ai/sessions/start",
-                request,
-                AiSessionStartResponse.class
-        );
+        try {
+            return restTemplate.postForObject(
+                    aiServerUrl + "/ai/sessions/start",
+                    request,
+                    AiSessionStartResponse.class
+            );
+        } catch (HttpClientErrorException e) {
+            System.out.println("AI session start failed");
+            System.out.println("status = " + e.getStatusCode());
+            System.out.println("body = " + e.getResponseBodyAsString());
+            throw e;
+        }
     }
 
     public AiSessionStatusResponse getStatus(String sessionId) {
