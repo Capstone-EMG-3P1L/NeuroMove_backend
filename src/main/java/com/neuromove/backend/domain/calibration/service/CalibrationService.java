@@ -111,6 +111,18 @@ public class CalibrationService {
         CalibrationProfile profile = CalibrationProfile.builder()
                 .user(user)
                 .calibrationSessionId(session.getCalibrationSessionId())
+                .ch1Mean(request.getCh1Mean())
+                .ch1Std(request.getCh1Std())
+                .ch2Mean(request.getCh2Mean())
+                .ch2Std(request.getCh2Std())
+                .ch3Mean(request.getCh3Mean())
+                .ch3Std(request.getCh3Std())
+                .activationThreshold(request.getActivationThreshold())
+                .intentThresholdLeft(request.getIntentThresholdLeft())
+                .intentThresholdRight(request.getIntentThresholdRight())
+                .intentThresholdForward(request.getIntentThresholdForward())
+                .fatigueBaseline(request.getFatigueBaseline())
+                .signalQuality(request.getSignalQuality())
                 .isActive(true)
                 .build();
 
