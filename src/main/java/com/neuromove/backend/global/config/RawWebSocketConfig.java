@@ -15,14 +15,13 @@ public class RawWebSocketConfig implements WebSocketConfigurer {
 
     private final MotorWebSocketHandler motorWebSocketHandler;
 
-    @Value("${app.websocket.allowed-origins:*}")
-    private String[] allowedOrigins;
     /**
      * Raw WebSocket (모터 보드용)
+     * ESP32 같은 임베디드 디바이스는 Origin 헤더를 보내지 않으므로 * 고정
      */
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(motorWebSocketHandler, "/ws/motor")
-                .setAllowedOriginPatterns(allowedOrigins);
+                .setAllowedOriginPatterns("*");
     }
 }
