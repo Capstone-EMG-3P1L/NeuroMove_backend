@@ -5,6 +5,7 @@ import com.neuromove.backend.domain.calibration.repository.CalibrationProfileRep
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
 import com.neuromove.backend.domain.command.service.FailSafeStateManager;
+import com.neuromove.backend.domain.command.service.TurnControlManager;
 import com.neuromove.backend.domain.device.entity.EmgDevice;
 import com.neuromove.backend.domain.device.entity.MotorDevice;
 import com.neuromove.backend.domain.device.repository.EmgDeviceRepository;
@@ -52,6 +53,7 @@ public class SessionService {
     private final IntentLogRepository intentLogRepository;
     private final CommandRepository commandRepository;
     private final FailSafeStateManager failSafeStateManager;
+    private final TurnControlManager   turnControlManager;
 
     @Transactional
     public SessionStartResponse start(User user, SessionStartRequest request) {
@@ -176,11 +178,15 @@ public class SessionService {
             return SessionEndResponse.from(session);
         }
 
-        // 트랜잭션 커밋 이후 fail-safe 상태 정리
+        // 세션 상태 ENDED로 업데이트 (endedAt, durationSeconds 포함)
+        session.end();
+
+        // 트랜잭션 커밋 이후 메모리 상태 정리
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 failSafeStateManager.clear(sessionId);
+                turnControlManager.clear(sessionId);   // 예약된 FORWARD 취소 + 연속 카운트 초기화
             }
         });
 
