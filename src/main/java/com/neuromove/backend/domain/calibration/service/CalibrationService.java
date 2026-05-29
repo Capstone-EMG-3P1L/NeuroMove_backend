@@ -48,13 +48,13 @@ public class CalibrationService {
 
         CalibrationSession saved = calibrationSessionRepository.save(session);
 
-        // TODO: AI 서버 연동 후 주석 해제
-//        aiCalibrationClient.start(AiCalibrationStartRequest.builder()
-//                .calibrationSessionId(saved.getCalibrationSessionId())
-//                .userId(user.getUserId())
-//                .deviceId(emgDevice.getEmgDeviceId())
-//                .initialStep(CalibrationStep.REST.name())
-//                .build());
+        // AI 서버에 캘리브레이션 시작 요청
+        aiCalibrationClient.start(AiCalibrationStartRequest.builder()
+                .calibrationSessionId(saved.getCalibrationSessionId())
+                .userId(user.getUserId())
+                .deviceId(emgDevice.getEmgDeviceId())
+                .initialStep(CalibrationStep.REST.name())
+                .build());
 
         return CalibrationStartResponse.from(saved);
     }
@@ -72,11 +72,11 @@ public class CalibrationService {
 
         session.proceedToStep(request.getStep());
 
-        // TODO: AI 서버 연동 후 주석 해제
-//        aiCalibrationClient.updateStep(AiCalibrationStepRequest.builder()
-//                .calibrationSessionId(session.getCalibrationSessionId())
-//                .step(request.getStep().name())
-//                .build());
+        // AI 서버에 캘리브레이션 단계 변경 요청
+        aiCalibrationClient.updateStep(AiCalibrationStepRequest.builder()
+                .calibrationSessionId(session.getCalibrationSessionId())
+                .step(request.getStep().name())
+                .build());
 
         return CalibrationStepUpdateResponse.from(session);
     }
@@ -92,18 +92,16 @@ public class CalibrationService {
             throw new CustomException(ErrorCode.CALIBRATION_ALREADY_COMPLETED);
         }
 
-        // TODO: AI 서버 연동 후 아래 더미 데이터 제거하고 주석 해제
-//        AiCalibrationFinishResponse aiResponse = aiCalibrationClient.finish(
-//                AiCalibrationFinishRequest.builder()
-//                        .calibrationSessionId(session.getCalibrationSessionId())
-//                        .build()
-//        );
-//        AiCalibrationFinishResponse.Result result = aiResponse.getData().getResult();
-//        AiCalibrationFinishResponse.Baseline baseline = result.getBaseline();
-//        Map<String, Float> intentThresholds = result.getIntentThresholds();
-//        session.complete(result.getSignalQuality());
-
-        session.complete(null);
+        // AI 서버에 캘리브레이션 종료 요청
+        AiCalibrationFinishResponse aiResponse = aiCalibrationClient.finish(
+                AiCalibrationFinishRequest.builder()
+                        .calibrationSessionId(session.getCalibrationSessionId())
+                        .build()
+        );
+        AiCalibrationFinishResponse.Result result = aiResponse.getData().getResult();
+        AiCalibrationFinishResponse.Baseline baseline = result.getBaseline();
+        Map<String, Float> intentThresholds = result.getIntentThresholds();
+        session.complete(result.getSignalQuality());
 
         calibrationProfileRepository.findFirstByUserAndIsActiveTrueOrderByCreatedAtDesc(user)
                 .ifPresent(CalibrationProfile::deactivate);
@@ -118,9 +116,10 @@ public class CalibrationService {
                 .ch3Mean(request.getCh3Mean())
                 .ch3Std(request.getCh3Std())
                 .activationThreshold(request.getActivationThreshold())
+                .intentThresholdRest(request.getIntentThresholdRest())
                 .intentThresholdLeft(request.getIntentThresholdLeft())
                 .intentThresholdRight(request.getIntentThresholdRight())
-                .intentThresholdForward(request.getIntentThresholdForward())
+                .intentThresholdStop(request.getIntentThresholdStop())
                 .fatigueBaseline(request.getFatigueBaseline())
                 .signalQuality(request.getSignalQuality())
                 .isActive(true)
@@ -157,8 +156,13 @@ public class CalibrationService {
         // Redis에 sessionId 저장 (calibration 진행 중임을 표시)
         onboardingRedisService.saveCalibrationSession(request.getOnboardingId(), sessionId);
 
-        // TODO: AI 서버 연동 후 주석 해제 (기존 start과 동일)
-        // aiCalibrationClient.start(...);
+        // AI 서버에 캘리브레이션 시작 요청 (온보딩)
+        aiCalibrationClient.start(AiCalibrationStartRequest.builder()
+                .calibrationSessionId(sessionId)
+                .userId(null)  // 온보딩 중이라 아직 User 없음
+                .deviceId(emgDevice.deviceId())
+                .initialStep(CalibrationStep.REST.name())
+                .build());
 
         return CalibrationStartResponse.ofOnboarding(sessionId, emgDevice.deviceId());
     }
@@ -178,8 +182,11 @@ public class CalibrationService {
                 request.getStep().name()
         );
 
-        // TODO: AI 서버 연동 후 주석 해제 (기존 updateStep과 동일)
-        // aiCalibrationClient.updateStep(...);
+        // AI 서버에 캘리브레이션 단계 변경 요청 (온보딩)
+        aiCalibrationClient.updateStep(AiCalibrationStepRequest.builder()
+                .calibrationSessionId(request.getCalibrationSessionId())
+                .step(request.getStep().name())
+                .build());
 
         return CalibrationStepUpdateResponse.ofOnboarding(
                 request.getCalibrationSessionId(),
@@ -194,7 +201,10 @@ public class CalibrationService {
      * - complete 단계에서 한 번에 Entity로 변환해 DB 저장
      */
     public CalibrationEndResponse endForOnboarding(CalibrationEndRequest request) {
-        // TODO: AI 서버 연동 후 finish 호출 추가 (기존 end와 동일)
+        // AI 서버에 캘리브레이션 종료 요청 (온보딩)
+        aiCalibrationClient.finish(AiCalibrationFinishRequest.builder()
+                .calibrationSessionId(request.getCalibrationSessionId())
+                .build());
 
         // 결과를 Redis에 저장 (실내부에서 onboardingId 검증도 함께 수행됨)
         onboardingRedisService.saveCalibrationResult(request);
