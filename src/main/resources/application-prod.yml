@@ -38,6 +38,7 @@ ai:
 app:
   cors:
     allowed-origins: ${FRONTEND_URL:http://localhost:5173}
+    additional-origins: ${ADDITIONAL_ORIGINS:}
   websocket:
     # frontend url 생기면 env에 넣고 수정
     allowed-origins: ${FRONTEND_URL}
