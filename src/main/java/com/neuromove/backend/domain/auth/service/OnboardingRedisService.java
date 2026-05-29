@@ -115,9 +115,10 @@ public class OnboardingRedisService {
 
         put(values, "activationThreshold", request.getActivationThreshold());
 
+        put(values, "intentThresholdRest", request.getIntentThresholdRest());
         put(values, "intentThresholdLeft", request.getIntentThresholdLeft());
         put(values, "intentThresholdRight", request.getIntentThresholdRight());
-        put(values, "intentThresholdForward", request.getIntentThresholdForward());
+        put(values, "intentThresholdStop", request.getIntentThresholdStop());
 
         put(values, "fatigueBaseline", request.getFatigueBaseline());
 
@@ -227,9 +228,10 @@ public class OnboardingRedisService {
                 parseFloat(data.get("ch3Mean")),
                 parseFloat(data.get("ch3Std")),
                 parseFloat(data.get("activationThreshold")),
+                parseFloat(data.get("intentThresholdRest")),
                 parseFloat(data.get("intentThresholdLeft")),
                 parseFloat(data.get("intentThresholdRight")),
-                parseFloat(data.get("intentThresholdForward")),
+                parseFloat(data.get("intentThresholdStop")),
                 parseFloat(data.get("fatigueBaseline")),
                 parseFloat(data.get("signalQuality"))
         );
@@ -338,9 +340,10 @@ public class OnboardingRedisService {
             Float ch3Mean,
             Float ch3Std,
             Float activationThreshold,
+            Float intentThresholdRest,
             Float intentThresholdLeft,
             Float intentThresholdRight,
-            Float intentThresholdForward,
+            Float intentThresholdStop,
             Float fatigueBaseline,
             Float signalQuality
     ) {}
