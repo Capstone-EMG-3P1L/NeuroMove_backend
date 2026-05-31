@@ -25,7 +25,7 @@ public class IntentLog {
     private Session session;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "intent", columnDefinition = "ENUM('FORWARD','LEFT','RIGHT','STOP')", nullable = false)
+    @Column(name = "intent", columnDefinition = "ENUM('REST','LEFT','RIGHT','STOP')", nullable = false)
     private IntentType intent;
 
     @Column(name = "confidence")
