@@ -36,7 +36,7 @@ public class IntentService {
     private static final float MAX_DRIVING_MINUTES = 30.0f;
     private static final float EMERGENCY_STOP_THRESHOLD = 0.7f;
     private static final float FATIGUE_THRESHOLD = 0.5f;
-    private static final float CONFIDENCE_THRESHOLD = 0.7f;
+    private static final float CONFIDENCE_THRESHOLD = 0.5f;
     private static final long STALE_COMMAND_MS = 30000L;
 
     // 연속 stale 3회 시 STOP
