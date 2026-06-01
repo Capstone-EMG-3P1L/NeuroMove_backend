@@ -70,15 +70,9 @@ public class TurnControlManager {
             TurnControlState state = states.get(sessionId);
             if (state != null) {
                 state.cancelPendingForward();
-                state.consecutiveCount = 0;  // 공통: 카운트 초기화
+                state.consecutiveCount = 0;
                 state.lastDirection    = "";
-                if (command.equals("FORWARD")) {
-                    // FORWARD: lastExecutedTurn도 초기화 → 다음 LEFT/RIGHT 새로 인정
-                    log.debug("[TURN] FORWARD 수신 → lastExecutedTurn 초기화: sessionId={}", sessionId);
-                    state.lastExecutedTurn = "";
-                }
-                // STOP / EMERGENCY_STOP: lastExecutedTurn 유지
-                // → FORWARD 오기 전까지 직전 회전 방향 재실행 방지
+                state.lastExecutedTurn = "";  // 모든 비-회전 명령에서 초기화
             }
             boolean sent = motorWebSocketService.sendCommand(motorDeviceId, command);
             if (!sent) log.warn("[TURN] 명령 전송 실패: sessionId={}, command={}", sessionId, command);
@@ -133,6 +127,7 @@ public class TurnControlManager {
         state.pendingForward = scheduler.schedule(() -> {
             log.info("[TURN] 회전 완료 → auto-FORWARD 전송: sessionId={}", sessionId);
             motorWebSocketService.sendCommand(motorDeviceId, "FORWARD");
+            state.lastExecutedTurn = "";
         }, TURN_DURATION_MS, TimeUnit.MILLISECONDS);
 
         return command;

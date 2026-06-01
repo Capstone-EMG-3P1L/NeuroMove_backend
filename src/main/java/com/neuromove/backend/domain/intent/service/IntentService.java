@@ -38,16 +38,19 @@ public class IntentService {
     private static final float MAX_DRIVING_MINUTES = 30.0f;
     private static final float EMERGENCY_STOP_THRESHOLD = 0.7f;
     private static final float FATIGUE_THRESHOLD = 0.5f;
-    private static final float CONFIDENCE_THRESHOLD = 0.7f;
+    private static final float CONFIDENCE_THRESHOLD = 0.5f;
     private static final long STALE_COMMAND_MS = 30000L;
 
     // 연속 stale 3회 시 STOP
     private static final int MAX_CONSECUTIVE_STALE = 3;
 
+    // 연속 이상 패턴 3회 시 EMERGENCY_STOP
+    private static final int MAX_CONSECUTIVE_ABNORMAL = 3;
+
     // 이상 패턴 판별 기준값
+    // signalQuality만 사용 (전극 탈락/노이즈 등 물리적 이상)
+    // fatigueScore는 calibration 없이 raw 값이라 riskScore에서만 반영, confidence는 REST에서 자연적으로 낮으므로 제외
     private static final float ABNORMAL_SIGNAL_QUALITY_THRESHOLD = 0.2f;
-    private static final float ABNORMAL_FATIGUE_THRESHOLD = 0.9f;
-    private static final float ABNORMAL_CONFIDENCE_THRESHOLD = 0.3f;
 
     private final SessionRepository sessionRepository;
     private final IntentLogRepository intentLogRepository;
@@ -85,10 +88,10 @@ public class IntentService {
         }
 
         // 이상 패턴 감지
-        boolean abnormalPattern =
-                request.getSignalQuality() < ABNORMAL_SIGNAL_QUALITY_THRESHOLD
-                        || request.getFatigueScore() > ABNORMAL_FATIGUE_THRESHOLD
-                        || request.getConfidence() < ABNORMAL_CONFIDENCE_THRESHOLD;
+        // - confidence: REST 구간에서 신호 에너지 낮아 자연적으로 낮게 나오므로 제외 (lowConfidence/BLOCKED 로직에서 별도 처리)
+        // - fatigueScore: calibration 없으면 raw 신호 평균이라 참고용에 불과 → riskScore에서 이미 반영됨
+        // - signalQuality만 이상 패턴 기준으로 사용 (전극 탈락/노이즈 등 물리적 이상 감지)
+        boolean abnormalPattern = request.getSignalQuality() < ABNORMAL_SIGNAL_QUALITY_THRESHOLD;
 
         // 이상 패턴 카운트 관리
         int abnormalCount;
@@ -133,8 +136,9 @@ public class IntentService {
 
         // fail-safe 우선 적용
         CommandType finalCommand;
-        if (abnormalCount >= 1) {
-            finalCommand = CommandType.EMERGENCY_STOP; // 이상 패턴 감지 시 즉시 비상정지
+        if (abnormalCount >= MAX_CONSECUTIVE_ABNORMAL) {
+            finalCommand = CommandType.EMERGENCY_STOP; // 이상 패턴 3회 연속 시 비상정지
+            failSafeStateManager.resetAbnormalCount(session.getSessionId()); // 발동 후 카운터 리셋 (연속 재발동 방지)
         } else if (staleCount >= MAX_CONSECUTIVE_STALE) {
             finalCommand = CommandType.STOP; // stale 3회 누적 시 자동 STOP
         } else {
@@ -145,7 +149,7 @@ public class IntentService {
 
         // 3. FSM 상태 전이
         if (finalCommand == CommandType.EMERGENCY_STOP) {
-            fsmService.transition(session, FsmStateType.EMERGENCY_STOP, "FAIL_SAFE_ABNORMAL_PATTERN"); // fail-safe 비상정지와 FSM 동기화
+            fsmService.transition(session, FsmStateType.EMERGENCY_STOP, "FAIL_SAFE_ABNORMAL_PATTERN_3X"); // 이상 패턴 3회 연속 비상정지
         } else if (riskScore >= EMERGENCY_STOP_THRESHOLD) {
             fsmService.transition(session, FsmStateType.EMERGENCY_STOP, "RISK_SCORE_EXCEEDED");
         } else if (riskScore >= FATIGUE_THRESHOLD) {
