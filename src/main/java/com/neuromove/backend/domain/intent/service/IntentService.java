@@ -212,18 +212,28 @@ public class IntentService {
             });
         }
 
-        // WebSocket으로 프론트에 실시간 업데이트 전송
-        sessionWebSocketService.sendSessionUpdate(session.getSessionId(),
-                SessionUpdateMessage.builder()
-                        .type("INTENT")
-                        .sessionId(session.getSessionId())
-                        .intent(request.getIntent().name())
-                        .riskScore((double) riskScore)
-                        .command(finalCommand.name())
-                        .speedLevel(speedLevel)
-                        .timestamp(String.valueOf(System.currentTimeMillis()))
-                        .build()
-        );
+        // WebSocket으로 프론트에 실시간 업데이트 전송 (커밋 이후 전송)
+        final String sessionIdForWs = session.getSessionId();
+        final String intentName = request.getIntent().name();
+        final double riskScoreForWs = riskScore;
+        final String commandName = finalCommand.name();
+        final int speedLevelForWs = speedLevel;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sessionWebSocketService.sendSessionUpdate(sessionIdForWs,
+                        SessionUpdateMessage.builder()
+                                .type("INTENT")
+                                .sessionId(sessionIdForWs)
+                                .intent(intentName)
+                                .riskScore(riskScoreForWs)
+                                .command(commandName)
+                                .speedLevel(speedLevelForWs)
+                                .timestamp(String.valueOf(System.currentTimeMillis()))
+                                .build()
+                );
+            }
+        });
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
     }
