@@ -42,6 +42,9 @@ public class IntentService {
     // 연속 stale 3회 시 STOP
     private static final int MAX_CONSECUTIVE_STALE = 3;
 
+    // 연속 이상 패턴 3회 시 EMERGENCY_STOP
+    private static final int MAX_CONSECUTIVE_ABNORMAL = 3;
+
     // 이상 패턴 판별 기준값
     private static final float ABNORMAL_SIGNAL_QUALITY_THRESHOLD = 0.2f;
     private static final float ABNORMAL_FATIGUE_THRESHOLD = 0.9f;
@@ -130,8 +133,8 @@ public class IntentService {
 
         // fail-safe 우선 적용
         CommandType finalCommand;
-        if (abnormalCount >= 1) {
-            finalCommand = CommandType.EMERGENCY_STOP; // 이상 패턴 감지 시 즉시 비상정지
+        if (abnormalCount >= MAX_CONSECUTIVE_ABNORMAL) {
+            finalCommand = CommandType.EMERGENCY_STOP; // 이상 패턴 3회 연속 시 비상정지
         } else if (staleCount >= MAX_CONSECUTIVE_STALE) {
             finalCommand = CommandType.STOP; // stale 3회 누적 시 자동 STOP
         } else {
@@ -142,7 +145,7 @@ public class IntentService {
 
         // 3. FSM 상태 전이
         if (finalCommand == CommandType.EMERGENCY_STOP) {
-            fsmService.transition(session, FsmStateType.EMERGENCY_STOP, "FAIL_SAFE_ABNORMAL_PATTERN"); // fail-safe 비상정지와 FSM 동기화
+            fsmService.transition(session, FsmStateType.EMERGENCY_STOP, "FAIL_SAFE_ABNORMAL_PATTERN_3X"); // 이상 패턴 3회 연속 비상정지
         } else if (riskScore >= EMERGENCY_STOP_THRESHOLD) {
             fsmService.transition(session, FsmStateType.EMERGENCY_STOP, "RISK_SCORE_EXCEEDED");
         } else if (riskScore >= FATIGUE_THRESHOLD) {
