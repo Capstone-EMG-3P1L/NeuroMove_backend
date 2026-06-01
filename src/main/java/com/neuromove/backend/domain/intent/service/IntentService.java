@@ -12,8 +12,10 @@ import com.neuromove.backend.domain.intent.dto.request.IntentReceiveRequest;
 import com.neuromove.backend.domain.intent.dto.response.IntentReceiveResponse;
 import com.neuromove.backend.domain.intent.entity.IntentLog;
 import com.neuromove.backend.domain.intent.repository.IntentLogRepository;
+import com.neuromove.backend.domain.session.dto.websocket.SessionUpdateMessage;
 import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
+import com.neuromove.backend.domain.session.service.SessionWebSocketService;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -54,6 +56,7 @@ public class IntentService {
     private final MotorWebSocketService motorWebSocketService;
     private final FailSafeStateManager failSafeStateManager;
     private final TurnControlManager turnControlManager;    // 회전 확정 + FORWARD 예약
+    private final SessionWebSocketService sessionWebSocketService;
 
     @Transactional
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
@@ -204,6 +207,19 @@ public class IntentService {
                 }
             });
         }
+
+        // WebSocket으로 프론트에 실시간 업데이트 전송
+        sessionWebSocketService.sendSessionUpdate(session.getSessionId(),
+                SessionUpdateMessage.builder()
+                        .type("INTENT")
+                        .sessionId(session.getSessionId())
+                        .intent(request.getIntent().name())
+                        .riskScore((double) riskScore)
+                        .command(finalCommand.name())
+                        .speedLevel(speedLevel)
+                        .timestamp(String.valueOf(System.currentTimeMillis()))
+                        .build()
+        );
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
     }
