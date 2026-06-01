@@ -1,7 +1,7 @@
 package com.neuromove.backend.domain.command.entity.enums;
 
 public enum CommandType {
-    FORWARD,
+    REST,
     LEFT,
     RIGHT,
     STOP,

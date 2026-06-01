@@ -24,7 +24,7 @@ public class MotorWebSocketService {
 
     //모터 보드에 전송 가능한 명령 allowlist
     private static final Set<String> ALLOWED_COMMANDS =
-            Set.of("FORWARD", "LEFT", "RIGHT", "STOP", "EMERGENCY_STOP", "FINISH");
+            Set.of("REST", "FORWARD", "LEFT", "RIGHT", "STOP", "EMERGENCY_STOP", "FINISH");
 
     private final MotorWebSocketSessionManager sessionManager;
     private final ObjectMapper objectMapper;
@@ -33,7 +33,7 @@ public class MotorWebSocketService {
      * [모터에게 주행 명령 전송]
      *
      * @param deviceId 모터 디바이스 ID
-     * @param command  주행 명령 (LEFT / RIGHT / STOP / FINISH)
+     * @param command  주행 명령 (LEFT / RIGHT / STOP / FINISH / REST)
      * @return 전송 성공 여부
      */
     public boolean sendCommand(String deviceId, String command) {
