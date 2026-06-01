@@ -46,9 +46,9 @@ public class IntentService {
     private static final int MAX_CONSECUTIVE_ABNORMAL = 3;
 
     // 이상 패턴 판별 기준값
+    // signalQuality만 사용 (전극 탈락/노이즈 등 물리적 이상)
+    // fatigueScore는 calibration 없이 raw 값이라 riskScore에서만 반영, confidence는 REST에서 자연적으로 낮으므로 제외
     private static final float ABNORMAL_SIGNAL_QUALITY_THRESHOLD = 0.2f;
-    private static final float ABNORMAL_FATIGUE_THRESHOLD = 0.9f;
-    private static final float ABNORMAL_CONFIDENCE_THRESHOLD = 0.3f;
 
     private final SessionRepository sessionRepository;
     private final IntentLogRepository intentLogRepository;
@@ -85,10 +85,10 @@ public class IntentService {
         }
 
         // 이상 패턴 감지
-        boolean abnormalPattern =
-                request.getSignalQuality() < ABNORMAL_SIGNAL_QUALITY_THRESHOLD
-                        || request.getFatigueScore() > ABNORMAL_FATIGUE_THRESHOLD
-                        || request.getConfidence() < ABNORMAL_CONFIDENCE_THRESHOLD;
+        // - confidence: REST 구간에서 신호 에너지 낮아 자연적으로 낮게 나오므로 제외 (lowConfidence/BLOCKED 로직에서 별도 처리)
+        // - fatigueScore: calibration 없으면 raw 신호 평균이라 참고용에 불과 → riskScore에서 이미 반영됨
+        // - signalQuality만 이상 패턴 기준으로 사용 (전극 탈락/노이즈 등 물리적 이상 감지)
+        boolean abnormalPattern = request.getSignalQuality() < ABNORMAL_SIGNAL_QUALITY_THRESHOLD;
 
         // 이상 패턴 카운트 관리
         int abnormalCount;
@@ -135,6 +135,7 @@ public class IntentService {
         CommandType finalCommand;
         if (abnormalCount >= MAX_CONSECUTIVE_ABNORMAL) {
             finalCommand = CommandType.EMERGENCY_STOP; // 이상 패턴 3회 연속 시 비상정지
+            failSafeStateManager.resetAbnormalCount(session.getSessionId()); // 발동 후 카운터 리셋 (연속 재발동 방지)
         } else if (staleCount >= MAX_CONSECUTIVE_STALE) {
             finalCommand = CommandType.STOP; // stale 3회 누적 시 자동 STOP
         } else {
