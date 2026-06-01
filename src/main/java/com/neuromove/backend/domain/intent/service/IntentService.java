@@ -12,8 +12,10 @@ import com.neuromove.backend.domain.intent.dto.request.IntentReceiveRequest;
 import com.neuromove.backend.domain.intent.dto.response.IntentReceiveResponse;
 import com.neuromove.backend.domain.intent.entity.IntentLog;
 import com.neuromove.backend.domain.intent.repository.IntentLogRepository;
+import com.neuromove.backend.domain.session.dto.websocket.SessionUpdateMessage;
 import com.neuromove.backend.domain.session.entity.Session;
 import com.neuromove.backend.domain.session.repository.SessionRepository;
+import com.neuromove.backend.domain.session.service.SessionWebSocketService;
 import com.neuromove.backend.global.exception.CustomException;
 import com.neuromove.backend.global.exception.ErrorCode;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -57,6 +59,7 @@ public class IntentService {
     private final MotorWebSocketService motorWebSocketService;
     private final FailSafeStateManager failSafeStateManager;
     private final TurnControlManager turnControlManager;    // 회전 확정 + FORWARD 예약
+    private final SessionWebSocketService sessionWebSocketService;
 
     @Transactional
     public IntentReceiveResponse receiveIntent(IntentReceiveRequest request) {
@@ -208,6 +211,29 @@ public class IntentService {
                 }
             });
         }
+
+        // WebSocket으로 프론트에 실시간 업데이트 전송 (커밋 이후 전송)
+        final String sessionIdForWs = session.getSessionId();
+        final String intentName = request.getIntent().name();
+        final double riskScoreForWs = riskScore;
+        final String commandName = finalCommand.name();
+        final int speedLevelForWs = speedLevel;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sessionWebSocketService.sendSessionUpdate(sessionIdForWs,
+                        SessionUpdateMessage.builder()
+                                .type("INTENT")
+                                .sessionId(sessionIdForWs)
+                                .intent(intentName)
+                                .riskScore(riskScoreForWs)
+                                .command(commandName)
+                                .speedLevel(speedLevelForWs)
+                                .timestamp(String.valueOf(System.currentTimeMillis()))
+                                .build()
+                );
+            }
+        });
 
         return IntentReceiveResponse.of(savedIntent, savedCommand);
     }
