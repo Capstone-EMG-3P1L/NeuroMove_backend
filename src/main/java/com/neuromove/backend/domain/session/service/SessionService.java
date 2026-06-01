@@ -5,6 +5,7 @@ import com.neuromove.backend.domain.calibration.repository.CalibrationProfileRep
 import com.neuromove.backend.domain.command.entity.Command;
 import com.neuromove.backend.domain.command.repository.CommandRepository;
 import com.neuromove.backend.domain.command.service.FailSafeStateManager;
+import com.neuromove.backend.domain.command.service.MotorWebSocketService;
 import com.neuromove.backend.domain.command.service.TurnControlManager;
 import com.neuromove.backend.domain.device.entity.EmgDevice;
 import com.neuromove.backend.domain.device.entity.MotorDevice;
@@ -58,6 +59,7 @@ public class SessionService {
     private final CommandRepository commandRepository;
     private final FailSafeStateManager failSafeStateManager;
     private final TurnControlManager   turnControlManager;
+    private final MotorWebSocketService motorWebSocketService;
     private final AiSessionClient aiSessionClient;
 
     @Transactional
@@ -231,12 +233,20 @@ public class SessionService {
                         .build()
         );
 
-        // 트랜잭션 커밋 이후 메모리 상태 정리
+        // 트랜잭션 커밋 이후 모터 FINISH 전송 + 메모리 상태 정리
+        String motorDeviceId = session.getMotorDevice() != null
+                ? session.getMotorDevice().getMotorDeviceId()
+                : null;
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
+                // 모터에 즉시 정지 명령 전송
+                if (motorDeviceId != null) {
+                    motorWebSocketService.sendCommand(motorDeviceId, "FINISH");
+                }
                 failSafeStateManager.clear(sessionId);
-                turnControlManager.clear(sessionId);   // 예약된 FORWARD 취소 + 연속 카운트 초기화
+                turnControlManager.clear(sessionId);   // 예약된 auto-REST 취소 + 연속 카운트 초기화
             }
         });
 
